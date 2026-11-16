@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>إدارة الموظفين السعوديين</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div id="lock"><div class="card">
+  <div class="h2">الدخول للنظام</div>
+  <p class="muted">أدخل الرمز السري لعرض البيانات</p>
+  <input id="lockPin" class="in" type="password" inputmode="numeric" autocomplete="off" style="text-align:center;margin-bottom:12px">
+  <button class="btn primary" id="lockBtn" style="width:100%;justify-content:center">دخول</button>
+  <p id="lockErr" style="color:var(--bad-tx);min-height:1.5em;margin:8px 0 0"></p>
+</div></div>
+
+<header class="top"><div class="wrap">
+  <div class="logo">م</div>
+  <div>
+    <h1>منظومة إدارة الموظفين السعوديين</h1>
+    <p>متابعة الهوية وبطاقة الصراف واستحقاق الدعم</p>
+  </div>
+  <div class="sp"></div>
+  <button class="btn" id="btnImport" title="استيراد ملف Excel">⬆ استيراد Excel</button>
+  <button class="btn" id="btnExport" title="تصدير إلى Excel">⬇ تصدير Excel</button>
+  <button class="btn" id="btnSettings" title="الإعدادات">⚙ الإعدادات</button>
+  <input type="file" id="fileImport" accept=".xlsx,.xlsm,.xls" hidden>
+</div></header>
+
+<nav class="tabs"><div class="wrap">
+  <button data-v="dash" class="on">لوحة التحكم</button>
+  <button data-v="list">سجل الموظفين</button>
+  <button data-v="alerts">التنبيهات <span class="count" id="alertCount" hidden></span></button>
+  <button data-v="guide">دليل الاستخدام</button>
+</div></nav>
+
+<main class="wrap">
+
+  <!-- Dashboard -->
+  <section class="view on" id="v-dash">
+    <div class="kpis" id="kpis"></div>
+    <div class="grid2">
+      <div class="card panel">
+        <div class="h2">توزيع الحالات</div>
+        <div class="bars" id="chartStatus"></div>
+      </div>
+      <div class="card panel">
+        <div class="h2">التنبيهات حسب النوع</div>
+        <div class="bars" id="chartType"></div>
+        <div class="legend"><span><i class="f-bad"></i>منتهية</span><span><i class="f-warn"></i>خلال 30 يومًا</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- List -->
+  <section class="view" id="v-list">
+    <div class="card">
+      <div class="toolbar">
+        <button class="btn primary" id="btnAdd">＋ إضافة موظف</button>
+        <div class="grow"><input class="in" id="q" type="search" placeholder="بحث…"></div>
+        <select class="in" id="qField">
+          <option value="all">جميع الحقول</option>
+          <option value="name">الاسم</option>
+          <option value="nid">رقم الهوية</option>
+          <option value="job">المهنة</option>
+          <option value="card">رقم بطاقة الصراف</option>
+          <option value="phone">رقم الجوال</option>
+          <option value="email">البريد الإلكتروني</option>
+        </select>
+        <select class="in" id="qStatus">
+          <option value="">كل الحالات</option>
+          <option value="exp">لديه تاريخ منتهٍ</option>
+          <option value="soon">قريب الانتهاء (≤ 30 يومًا)</option>
+        </select>
+        <button class="btn" id="btnShowAll">إظهار الكل</button>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr>
+          <th data-k="n">#</th><th data-k="name">اسم المشترك</th><th data-k="dob">تاريخ الميلاد</th><th class="nosort">الهجري</th>
+          <th data-k="age">العمر</th><th data-k="nid">رقم الهوية</th><th data-k="idExp">انتهاء الهوية</th><th data-k="idDays">المتبقي (الهوية)</th>
+          <th data-k="job">المهنة</th><th data-k="card">بطاقة الصراف</th><th data-k="cardExp">انتهاء البطاقة</th><th data-k="cardDays">المتبقي (البطاقة)</th>
+          <th data-k="join">الالتحاق</th><th data-k="sup">تاريخ الدعم</th><th data-k="supDays">المتبقي (الدعم)</th>
+          <th data-k="phone">الجوال</th><th data-k="email">البريد</th><th class="nosort">إجراءات</th>
+        </tr></thead>
+        <tbody id="tb"></tbody>
+      </table></div>
+      <div class="foot" id="listFoot"></div>
+    </div>
+  </section>
+
+  <!-- Alerts -->
+  <section class="view" id="v-alerts">
+    <div class="card">
+      <div class="toolbar">
+        <div class="h2" style="margin:0">التواريخ المنتهية والقريبة من الانتهاء</div>
+        <div class="grow"></div>
+        <select class="in" id="aType">
+          <option value="">كل الأنواع</option><option>الهوية</option><option>بطاقة الصراف</option><option>الدعم</option>
+        </select>
+        <select class="in" id="aState">
+          <option value="">كل الحالات</option><option value="dead">منتهية</option><option value="warn">قريب الانتهاء</option>
+        </select>
+        <button class="btn" id="btnPrint">🖨 تصدير PDF</button>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th class="nosort">الموظف</th><th class="nosort">النوع</th><th class="nosort">تاريخ الانتهاء</th><th class="nosort">الأيام المتبقية</th><th class="nosort">الحالة</th></tr></thead>
+        <tbody id="atb"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- Guide -->
+  <section class="view" id="v-guide">
+    <div class="card guide">
+      <div class="h2">دليل الاستخدام</div>
+      <p>نظام لإدارة بيانات الموظفين ومتابعة الهوية وبطاقة الصراف واستحقاق الدعم، مع تنبيهات ولوحة تحكم وصور للهويات.</p>
+      <h3>1. إضافة موظف</h3>
+      <ul><li>اضغط «إضافة موظف» في سجل الموظفين وأدخل البيانات.</li><li>يُضاف الموظف في أعلى الجدول برقم 1 ويُعاد ترقيم الباقين تلقائيًا.</li></ul>
+      <h3>2. العمليات التلقائية</h3>
+      <ul><li>يُحسب العمر من تاريخ الميلاد.</li><li>أدخل تاريخ الميلاد ميلاديًا أو هجريًا ويُحوَّل الآخر تلقائيًا (تقويم أم القرى).</li><li>تاريخ الدعم = تاريخ الالتحاق + 3 أشهر.</li><li>الأيام المتبقية تُحسب يوميًا تلقائيًا.</li></ul>
+      <h3>3. دلالات الألوان</h3>
+      <ul><li><span class="pill s-ok">أخضر</span> باقٍ أكثر من 30 يومًا.</li><li><span class="pill s-warn">أصفر</span> باقٍ 30 يومًا أو أقل.</li><li><span class="pill s-dead">أحمر داكن</span> التاريخ منتهٍ.</li><li>بدون لون: لا يوجد تاريخ مُدخل.</li></ul>
+      <h3>4. البحث والفلترة</h3>
+      <ul><li>ابحث بالاسم أو رقم الهوية أو المهنة أو البطاقة أو الجوال أو البريد أو جميع الحقول.</li><li>اضغط على عنوان أي عمود للترتيب. «إظهار الكل» يلغي الفلترة.</li></ul>
+      <h3>5. صور الهوية</h3>
+      <ul><li>من زر 🪪 في صف الموظف ارفع صورة الهوية أو اعرضها.</li><li>الصورة مرتبطة برقم الهوية وليس بموضع الصف.</li></ul>
+      <h3>6. التنبيهات</h3>
+      <ul><li>عند فتح الموقع تظهر نافذة تجمع الحالات المهمة (المنتهية والتي ستنتهي خلال 30 يومًا).</li></ul>
+      <h3>7. حفظ البيانات</h3>
+      <ul><li>تُحفظ البيانات داخل متصفحك على هذا الجهاز فقط ولا تُرسل إلى أي خادم.</li><li>لنقلها لجهاز آخر: «تصدير Excel» ثم «استيراد Excel» هناك، أو «نسخة احتياطية كاملة» من الإعدادات (تشمل صور الهويات).</li><li>يمكنك استيراد ملف Excel الأصلي (.xlsm) مباشرة.</li></ul>
+    </div>
+  </section>
+</main>
+
+<!-- Employee form -->
+<dialog id="dlgEmp">
+  <form method="dialog" id="empForm">
+    <div class="dh"><h3 id="empTitle">إضافة موظف</h3><button type="button" class="x" data-close>×</button></div>
+    <div class="db"><div class="form">
+      <div class="fs">البيانات الشخصية</div>
+      <div class="full"><label>اسم المشترك *</label><input class="in" name="name" required></div>
+      <div><label>تاريخ الميلاد (ميلادي)</label><input class="in" type="date" name="dob"></div>
+      <div><label>تاريخ الميلاد (هجري)</label><input class="in" name="dobH" placeholder="يوم/شهر/سنة مثل 15/08/1426"><div class="hint" id="ageHint"></div></div>
+      <div><label>رقم الهوية</label><input class="in" name="nid" inputmode="numeric"></div>
+      <div><label>تاريخ انتهاء الهوية</label><input class="in" type="date" name="idExp"></div>
+      <div class="full"><label>المهنة</label><input class="in" name="job"></div>
+      <div class="fs">بطاقة الصراف والدعم</div>
+      <div><label>رقم بطاقة الصراف</label><input class="in" name="card" inputmode="numeric"></div>
+      <div><label>تاريخ انتهاء بطاقة الصراف</label><input class="in" type="date" name="cardExp"></div>
+      <div><label>تاريخ الالتحاق</label><input class="in" type="date" name="join"><div class="hint" id="supHint"></div></div>
+      <div></div>
+      <div class="fs">التواصل</div>
+      <div><label>رقم الجوال</label><input class="in" name="phone" inputmode="tel"></div>
+      <div><label>البريد الإلكتروني</label><input class="in" type="email" name="email"></div>
+    </div></div>
+    <div class="df"><button class="btn primary" value="save">حفظ</button><button type="button" class="btn" data-close>إلغاء</button></div>
+  </form>
+</dialog>
+
+<!-- ID photo -->
+<dialog id="dlgId">
+  <div class="dh"><h3 id="idTitle">صورة الهوية</h3><button type="button" class="x" data-close>×</button></div>
+  <div class="db" id="idBody"></div>
+  <div class="df">
+    <label class="btn primary">رفع / استبدال الصورة<input type="file" accept="image/*" id="idFile" hidden></label>
+    <button class="btn danger" id="idDel">حذف الصورة</button>
+    <button type="button" class="btn" data-close>إغلاق</button>
+  </div>
+</dialog>
+
+<!-- Alerts popup -->
+<dialog id="dlgAlerts">
+  <div class="dh"><h3>⚠ تنبيهات تحتاج متابعة</h3><button type="button" class="x" data-close>×</button></div>
+  <div class="db"><ul class="alert-list" id="popList"></ul></div>
+  <div class="df"><button class="btn primary" id="popGo">عرض كل التنبيهات</button><button type="button" class="btn" data-close>إغلاق</button></div>
+</dialog>
+
+<!-- Settings -->
+<dialog id="dlgSet">
+  <div class="dh"><h3>الإعدادات</h3><button type="button" class="x" data-close>×</button></div>
+  <div class="db">
+    <div class="h2">الرمز السري</div>
+    <p class="muted">يطلب الموقع هذا الرمز عند فتحه على هذا الجهاز. اتركه فارغًا لإلغاء القفل.</p>
+    <div class="row"><input class="in" id="setPin" type="password" placeholder="رمز جديد" style="max-width:220px"><button class="btn primary" id="savePin">حفظ الرمز</button></div>
+    <div class="h2" style="margin-top:22px">نسخة احتياطية كاملة (مع صور الهويات)</div>
+    <div class="row"><button class="btn" id="bkSave">⬇ تنزيل نسخة احتياطية</button><label class="btn">⬆ استعادة نسخة<input type="file" id="bkLoad" accept=".json" hidden></label></div>
+    <div class="h2" style="margin-top:22px">المظهر</div>
+    <div class="row"><select class="in" id="theme"><option value="">تلقائي</option><option value="light">فاتح</option><option value="dark">داكن</option></select></div>
+    <div class="h2" style="margin-top:22px;color:var(--bad-tx)">حذف كل البيانات</div>
+    <button class="btn danger" id="wipe">حذف جميع الموظفين والصور من هذا الجهاز</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+<script src="assets/app.js"></script>
+</body>
+</html>
