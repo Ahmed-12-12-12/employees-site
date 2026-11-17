@@ -360,5 +360,20 @@
 
 <div class="toast" id="toast"></div>
 <script src="assets/app.js"></script>
+<script>
+/* رسالة واضحة إذا فُتح الملف من الجهاز أو كان مجلد assets ناقصًا */
+(function(){
+  var local=location.protocol==='file:';
+  var noCss=!getComputedStyle(document.documentElement).getPropertyValue('--brand').trim();
+  if(!local&&!noCss) return;
+  var msg=local
+    ? 'فتحت الملف من جهازك مباشرة. هذا النظام يعمل فقط بعد رفعه على استضافة تدعم PHP و MySQL، ثم فتح رابط موقعك (مثل https://موقعك/install.php أول مرة).'
+    : 'مجلد <b>assets</b> غير موجود بجانب ملف index.html على الاستضافة. فك ضغط الملف كاملًا وارفع كل الملفات والمجلدات معًا (index.html + مجلد assets + بقية الملفات) في نفس المكان.';
+  document.body.innerHTML='<div style="font-family:Cairo,Tahoma,sans-serif;direction:rtl;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f4f3ef;padding:16px">'+
+    '<div style="background:#fff;color:#111;max-width:560px;border-radius:18px;padding:28px;border-top:6px solid #f5ad1b;box-shadow:0 10px 30px rgba(0,0,0,.1);line-height:1.9;font-size:16px">'+
+    '<h2 style="margin:0 0 10px;font-size:22px">⚠ الموقع غير مكتمل</h2><p style="margin:0">'+msg+'</p>'+
+    '<p style="margin:14px 0 0;color:#6b7280;font-size:14px">التفاصيل في ملف README.txt داخل الملف المضغوط.</p></div></div>';
+})();
+</script>
 </body>
 </html>
