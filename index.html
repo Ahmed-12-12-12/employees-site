@@ -16,10 +16,12 @@
 
 <div id="lock"><div class="card">
   <img src="assets/logo.webp" alt="سيتي مكس" style="height:110px;margin:0 auto 8px;display:block">
-  <div class="h2">الدخول للنظام</div>
-  <p class="muted">أدخل الرمز السري لعرض البيانات</p>
-  <input id="lockPin" class="in" type="password" inputmode="numeric" autocomplete="off" style="text-align:center;margin-bottom:12px">
-  <button class="btn primary" id="lockBtn" style="width:100%;justify-content:center">دخول</button>
+  <div class="h2">دخول لوحة الإدارة</div>
+  <form id="loginForm">
+    <input id="lu" class="in" placeholder="اسم المستخدم" autocomplete="username" dir="ltr" style="margin-bottom:10px">
+    <input id="lp" class="in" type="password" placeholder="كلمة المرور" autocomplete="current-password" dir="ltr" style="margin-bottom:12px">
+    <button class="btn primary" style="width:100%;justify-content:center">دخول</button>
+  </form>
   <p id="lockErr" style="color:var(--bad-tx);min-height:1.5em;margin:8px 0 0"></p>
 </div></div>
 
@@ -27,7 +29,7 @@
   <div class="logo"><img src="assets/logo.webp" alt="سيتي مكس City Mix"></div>
   <div>
     <h1>منظومة إدارة الموظفين السعوديين</h1>
-    <p>سيتي مكس · متابعة الهوية وبطاقة الصراف واستحقاق الدعم</p>
+    <p>سيتي مكس · الموظفون والحضور والانصراف</p>
   </div>
   <div class="sp"></div>
   <button class="btn" id="btnImport" title="استيراد ملف Excel">⬆ استيراد Excel</button>
@@ -39,6 +41,10 @@
 <nav class="tabs"><div class="wrap">
   <button data-v="dash" class="on">لوحة التحكم</button>
   <button data-v="list">سجل الموظفين</button>
+  <button data-v="att">الحضور والانصراف</button>
+  <button data-v="report">التقرير الشهري</button>
+  <button data-v="sites">المواقع</button>
+  <button data-v="shifts">الورديات</button>
   <button data-v="alerts">التنبيهات <span class="count" id="alertCount" hidden></span></button>
   <button data-v="guide">دليل الاستخدام</button>
 </div></nav>
@@ -47,6 +53,9 @@
 
   <!-- Dashboard -->
   <section class="view on" id="v-dash">
+    <div class="h2">الحضور اليوم <span class="muted" id="todayLbl" style="font-weight:500;font-size:14px"></span></div>
+    <div class="kpis" id="kpisAtt"></div>
+    <div class="h2">الوثائق والدعم</div>
     <div class="kpis" id="kpis"></div>
     <div class="grid2">
       <div class="card panel">
@@ -80,6 +89,7 @@
           <option value="">كل الحالات</option>
           <option value="exp">لديه تاريخ منتهٍ</option>
           <option value="soon">قريب الانتهاء (≤ 30 يومًا)</option>
+          <option value="nodev">جوال الحضور غير مفعّل</option>
         </select>
         <button class="btn" id="btnShowAll">إظهار الكل</button>
       </div>
@@ -89,11 +99,71 @@
           <th data-k="age">العمر</th><th data-k="nid">رقم الهوية</th><th data-k="idExp">انتهاء الهوية</th><th data-k="idDays">المتبقي (الهوية)</th>
           <th data-k="job">المهنة</th><th data-k="card">بطاقة الصراف</th><th data-k="cardExp">انتهاء البطاقة</th><th data-k="cardDays">المتبقي (البطاقة)</th>
           <th data-k="join">الالتحاق</th><th data-k="sup">تاريخ الدعم</th><th data-k="supDays">المتبقي (الدعم)</th>
-          <th data-k="phone">الجوال</th><th data-k="email">البريد</th><th class="nosort">إجراءات</th>
+          <th data-k="phone">الجوال</th><th data-k="email">البريد</th><th data-k="shiftName">الوردية</th><th data-k="bound">جوال الحضور</th><th class="nosort">إجراءات</th>
         </tr></thead>
         <tbody id="tb"></tbody>
       </table></div>
       <div class="foot" id="listFoot"></div>
+    </div>
+  </section>
+
+  <!-- Attendance -->
+  <section class="view" id="v-att">
+    <div class="card">
+      <div class="toolbar">
+        <button class="btn primary" id="attAdd">＋ تسجيل يدوي</button>
+        <label class="row" style="gap:6px">من <input class="in" type="date" id="attFrom" style="width:auto"></label>
+        <label class="row" style="gap:6px">إلى <input class="in" type="date" id="attTo" style="width:auto"></label>
+        <div class="grow"><input class="in" id="attQ" type="search" placeholder="بحث باسم الموظف أو رقم الهوية…"></div>
+        <select class="in" id="attSite"><option value="">كل المواقع</option></select>
+        <select class="in" id="attState"><option value="">الكل</option><option value="open">داخل الآن (بدون انصراف)</option><option value="manual">معدّل يدويًا</option></select>
+        <button class="btn" id="attExport">⬇ Excel</button>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th class="nosort">الموظف</th><th class="nosort">التاريخ</th><th class="nosort">الحضور</th><th class="nosort">الانصراف</th><th class="nosort">المدة</th><th class="nosort">التأخير</th><th class="nosort">ملاحظة</th><th class="nosort">إجراءات</th></tr></thead>
+        <tbody id="attTb"></tbody>
+      </table></div>
+      <div class="foot" id="attFoot"></div>
+    </div>
+  </section>
+
+  <!-- Report -->
+  <section class="view" id="v-report">
+    <div class="card">
+      <div class="toolbar">
+        <div class="h2" style="margin:0">التقرير الشهري</div>
+        <input class="in" type="month" id="repMonth" style="width:auto">
+        <div class="grow"></div>
+        <button class="btn" id="repExport">⬇ Excel</button>
+        <button class="btn" id="repPrint">🖨 طباعة / PDF</button>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th class="nosort">الموظف</th><th class="nosort">الوردية</th><th class="nosort">أيام الحضور</th><th class="nosort">الغياب</th><th class="nosort">التأخير</th><th class="nosort">خروج مبكر</th><th class="nosort">إضافي</th><th class="nosort">ساعات العمل</th><th class="nosort">بدون انصراف</th></tr></thead>
+        <tbody id="repTb"></tbody>
+      </table></div>
+      <div class="foot">الغياب يُحسب لمن لديه وردية فقط، ولا تُحسب أيام الراحة ولا الأيام قبل تاريخ الالتحاق. العمل في يوم الراحة يُحسب إضافيًا.</div>
+    </div>
+  </section>
+
+  <!-- Sites -->
+  <section class="view" id="v-sites">
+    <div class="card">
+      <div class="toolbar"><button class="btn primary" id="siteAdd">＋ إضافة موقع</button><div class="grow muted">كل مصنع أو موقع له باركود خاص وإحداثيات خاصة.</div></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th class="nosort">الموقع</th><th class="nosort">الإحداثيات</th><th class="nosort">النطاق</th><th class="nosort">طرق التسجيل</th><th class="nosort">شاشة الباركود</th><th class="nosort">إجراءات</th></tr></thead>
+        <tbody id="siteTb"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- Shifts -->
+  <section class="view" id="v-shifts">
+    <div class="card">
+      <div class="toolbar"><button class="btn primary" id="shiftAdd">＋ إضافة وردية</button><div class="grow muted">حدّد وقت الدوام وأيام الراحة لحساب التأخير والغياب والإضافي.</div></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th class="nosort">الوردية</th><th class="nosort">البداية</th><th class="nosort">النهاية</th><th class="nosort">السماح</th><th class="nosort">أيام الراحة</th><th class="nosort">الموظفون</th><th class="nosort">إجراءات</th></tr></thead>
+        <tbody id="shiftTb"></tbody>
+      </table></div>
     </div>
   </section>
 
@@ -122,21 +192,31 @@
   <section class="view" id="v-guide">
     <div class="card guide">
       <div class="h2">دليل الاستخدام</div>
-      <p>نظام لإدارة بيانات الموظفين ومتابعة الهوية وبطاقة الصراف واستحقاق الدعم، مع تنبيهات ولوحة تحكم وصور للهويات.</p>
-      <h3>1. إضافة موظف</h3>
-      <ul><li>اضغط «إضافة موظف» في سجل الموظفين وأدخل البيانات.</li><li>يُضاف الموظف في أعلى الجدول برقم 1 ويُعاد ترقيم الباقين تلقائيًا.</li></ul>
-      <h3>2. العمليات التلقائية</h3>
-      <ul><li>يُحسب العمر من تاريخ الميلاد.</li><li>أدخل تاريخ الميلاد ميلاديًا أو هجريًا ويُحوَّل الآخر تلقائيًا (تقويم أم القرى).</li><li>تاريخ الدعم = تاريخ الالتحاق + 3 أشهر.</li><li>الأيام المتبقية تُحسب يوميًا تلقائيًا.</li></ul>
-      <h3>3. دلالات الألوان</h3>
-      <ul><li><span class="pill s-ok">أخضر</span> باقٍ أكثر من 30 يومًا.</li><li><span class="pill s-warn">أصفر</span> باقٍ 30 يومًا أو أقل.</li><li><span class="pill s-dead">أحمر داكن</span> التاريخ منتهٍ.</li><li>بدون لون: لا يوجد تاريخ مُدخل.</li></ul>
-      <h3>4. البحث والفلترة</h3>
-      <ul><li>ابحث بالاسم أو رقم الهوية أو المهنة أو البطاقة أو الجوال أو البريد أو جميع الحقول.</li><li>اضغط على عنوان أي عمود للترتيب. «إظهار الكل» يلغي الفلترة.</li></ul>
-      <h3>5. صور الهوية</h3>
-      <ul><li>من زر 🪪 في صف الموظف ارفع صورة الهوية أو اعرضها.</li><li>الصورة مرتبطة برقم الهوية وليس بموضع الصف.</li></ul>
-      <h3>6. التنبيهات</h3>
-      <ul><li>عند فتح الموقع تظهر نافذة تجمع الحالات المهمة (المنتهية والتي ستنتهي خلال 30 يومًا).</li></ul>
-      <h3>7. حفظ البيانات</h3>
-      <ul><li>تُحفظ البيانات داخل متصفحك على هذا الجهاز فقط ولا تُرسل إلى أي خادم.</li><li>لنقلها لجهاز آخر: «تصدير Excel» ثم «استيراد Excel» هناك، أو «نسخة احتياطية كاملة» من الإعدادات (تشمل صور الهويات).</li><li>يمكنك استيراد ملف Excel الأصلي (.xlsm) مباشرة.</li></ul>
+      <h3>1. تجهيز الحضور والانصراف (مرة واحدة)</h3>
+      <ul>
+        <li>من «الورديات» أضف ورديات العمل (مثلًا 08:00–16:00، السماح 10 دقائق، الراحة الجمعة).</li>
+        <li>من «المواقع» أضف كل مصنع/موقع. وأنت واقف في الموقع اضغط «استخدم موقعي الحالي» لتعبئة الإحداثيات.</li>
+        <li>اضغط «فتح الشاشة» لموقع وافتحه على جهاز لوحي أو شاشة عند البوابة. الباركود يتغير كل 30 ثانية.</li>
+        <li>في بيانات كل موظف اختر ورديته ومواقعه المسموحة.</li>
+      </ul>
+      <h3>2. تفعيل جوال الموظف</h3>
+      <ul>
+        <li>في صف الموظف اضغط 📱 ثم «إنشاء رمز تفعيل»، وأرسل له الرابط والرمز.</li>
+        <li>يفتح الموظف الرابط من جواله ويدخل رقم هويته والرمز، فيُربط جواله بحسابه.</li>
+        <li>لا يستطيع التسجيل إلا من جواله. عند تغيير الجوال أنشئ رمزًا جديدًا (يُلغى الجوال القديم تلقائيًا).</li>
+      </ul>
+      <h3>3. طريقة تسجيل الموظف</h3>
+      <ul>
+        <li><b>بالباركود:</b> يمسح الباركود الظاهر على الشاشة بكاميرا الجوال. الباركود صالح لمدة دقيقة فقط، فلا تنفع صورته المرسلة لاحقًا.</li>
+        <li><b>بالموقع:</b> يضغط «تسجيل بالموقع» وهو داخل نطاق الموقع.</li>
+        <li>أول تسجيل في اليوم = حضور، والتالي = انصراف.</li>
+      </ul>
+      <h3>4. دقة الموقع الجغرافي</h3>
+      <ul><li>دقة GPS في الجوالات عادة 5–20 مترًا، وأسوأ داخل المباني. ننصح بنطاق 30–100 متر. يضيف النظام هامشًا حتى 25 مترًا حسب دقة الجوال، ويرفض التسجيل إذا كانت الدقة أسوأ من 100 متر.</li></ul>
+      <h3>5. الوثائق والدعم</h3>
+      <ul><li>العمر والأيام المتبقية وتاريخ الدعم (الالتحاق + 3 أشهر) تُحسب تلقائيًا.</li>
+      <li><span class="pill s-ok">أخضر</span> أكثر من 30 يومًا · <span class="pill s-warn">أصفر</span> 30 يومًا أو أقل · <span class="pill s-dead">أحمر داكن</span> منتهٍ.</li>
+      <li>«استيراد Excel» يحدّث الموظفين حسب رقم الهوية ويضيف الجدد، ولا يحذف أحدًا.</li></ul>
     </div>
   </section>
 </main>
@@ -161,9 +241,19 @@
       <div class="fs">التواصل</div>
       <div><label>رقم الجوال</label><input class="in" name="phone" inputmode="tel"></div>
       <div><label>البريد الإلكتروني</label><input class="in" type="email" name="email"></div>
+      <div class="fs">الحضور والانصراف</div>
+      <div><label>الوردية</label><select class="in" name="shift" style="width:100%"></select></div>
+      <div><label>المواقع المسموح التسجيل منها</label><div id="empSites" class="checks"></div><div class="hint">بدون اختيار = كل المواقع</div></div>
     </div></div>
     <div class="df"><button class="btn primary" value="save">حفظ</button><button type="button" class="btn" data-close>إلغاء</button></div>
   </form>
+</dialog>
+
+<!-- Device activation -->
+<dialog id="dlgDev">
+  <div class="dh"><h3 id="devTitle">جوال الحضور</h3><button type="button" class="x" data-close>×</button></div>
+  <div class="db" id="devBody"></div>
+  <div class="df"><button class="btn primary" id="devGen">إنشاء رمز تفعيل جديد</button><button type="button" class="btn" data-close>إغلاق</button></div>
 </dialog>
 
 <!-- ID photo -->
@@ -177,6 +267,52 @@
   </div>
 </dialog>
 
+<!-- Attendance manual -->
+<dialog id="dlgAtt">
+  <form method="dialog" id="attForm">
+    <div class="dh"><h3 id="attTitle">تسجيل يدوي</h3><button type="button" class="x" data-close>×</button></div>
+    <div class="db"><div class="form">
+      <div class="full"><label>الموظف *</label><select class="in" name="emp" style="width:100%" required></select></div>
+      <div><label>وقت الحضور *</label><input class="in" type="datetime-local" name="in" required></div>
+      <div><label>وقت الانصراف</label><input class="in" type="datetime-local" name="out"></div>
+      <div class="full"><label>سبب التعديل / ملاحظة</label><input class="in" name="note" placeholder="مثال: نسي التسجيل — بموافقة المشرف"></div>
+    </div></div>
+    <div class="df"><button class="btn primary" value="save">حفظ</button><button type="button" class="btn" data-close>إلغاء</button></div>
+  </form>
+</dialog>
+
+<!-- Site form -->
+<dialog id="dlgSite">
+  <form method="dialog" id="siteForm">
+    <div class="dh"><h3 id="siteTitle">موقع</h3><button type="button" class="x" data-close>×</button></div>
+    <div class="db"><div class="form">
+      <div class="full"><label>اسم الموقع *</label><input class="in" name="name" required placeholder="مثال: مصنع الرياض"></div>
+      <div><label>خط العرض (Latitude)</label><input class="in" name="lat" dir="ltr" inputmode="decimal"></div>
+      <div><label>خط الطول (Longitude)</label><input class="in" name="lng" dir="ltr" inputmode="decimal"></div>
+      <div class="full row"><button type="button" class="btn" id="siteHere">📍 استخدم موقعي الحالي</button><a class="btn" id="siteMap" target="_blank" rel="noopener">🗺 عرض على الخريطة</a><span class="hint" id="siteHereHint"></span></div>
+      <div><label>نطاق التسجيل (متر)</label><input class="in" type="number" min="1" name="radius" value="50"><div class="hint" id="radHint"></div></div>
+      <div><label>طرق التسجيل المسموحة</label>
+        <div class="checks"><label><input type="checkbox" name="qr" checked> الباركود المتغير</label><label><input type="checkbox" name="gps" checked> الموقع الجغرافي</label></div></div>
+    </div></div>
+    <div class="df"><button class="btn primary" value="save">حفظ</button><button type="button" class="btn" data-close>إلغاء</button></div>
+  </form>
+</dialog>
+
+<!-- Shift form -->
+<dialog id="dlgShift">
+  <form method="dialog" id="shiftForm">
+    <div class="dh"><h3 id="shiftTitle">وردية</h3><button type="button" class="x" data-close>×</button></div>
+    <div class="db"><div class="form">
+      <div class="full"><label>اسم الوردية *</label><input class="in" name="name" required placeholder="مثال: صباحي"></div>
+      <div><label>بداية الدوام</label><input class="in" type="time" name="start" value="08:00" required></div>
+      <div><label>نهاية الدوام</label><input class="in" type="time" name="end" value="16:00" required><div class="hint">إذا كانت النهاية قبل البداية تُعتبر وردية ليلية.</div></div>
+      <div><label>فترة السماح للتأخير (دقيقة)</label><input class="in" type="number" min="0" name="grace" value="10"></div>
+      <div class="full"><label>أيام الراحة</label><div class="checks" id="offDays"></div></div>
+    </div></div>
+    <div class="df"><button class="btn primary" value="save">حفظ</button><button type="button" class="btn" data-close>إلغاء</button></div>
+  </form>
+</dialog>
+
 <!-- Alerts popup -->
 <dialog id="dlgAlerts">
   <div class="dh"><h3>⚠ تنبيهات تحتاج متابعة</h3><button type="button" class="x" data-close>×</button></div>
@@ -188,15 +324,13 @@
 <dialog id="dlgSet">
   <div class="dh"><h3>الإعدادات</h3><button type="button" class="x" data-close>×</button></div>
   <div class="db">
-    <div class="h2">الرمز السري</div>
-    <p class="muted">يطلب الموقع هذا الرمز عند فتحه على هذا الجهاز. اتركه فارغًا لإلغاء القفل.</p>
-    <div class="row"><input class="in" id="setPin" type="password" placeholder="رمز جديد" style="max-width:220px"><button class="btn primary" id="savePin">حفظ الرمز</button></div>
-    <div class="h2" style="margin-top:22px">نسخة احتياطية كاملة (مع صور الهويات)</div>
-    <div class="row"><button class="btn" id="bkSave">⬇ تنزيل نسخة احتياطية</button><label class="btn">⬆ استعادة نسخة<input type="file" id="bkLoad" accept=".json" hidden></label></div>
+    <div class="h2">تغيير كلمة المرور <span class="muted" id="meLbl" style="font-weight:500;font-size:14px"></span></div>
+    <div class="row"><input class="in" id="pwOld" type="password" placeholder="الحالية" style="max-width:180px"><input class="in" id="pwNew" type="password" placeholder="الجديدة (8+)" style="max-width:180px"><button class="btn primary" id="pwSave">حفظ</button></div>
+    <div class="h2" style="margin-top:22px">إضافة مدير آخر</div>
+    <div class="row"><input class="in" id="adU" placeholder="اسم المستخدم" dir="ltr" style="max-width:180px"><input class="in" id="adP" type="password" placeholder="كلمة المرور (8+)" style="max-width:180px"><button class="btn" id="adSave">إضافة</button></div>
     <div class="h2" style="margin-top:22px">المظهر</div>
     <div class="row"><select class="in" id="theme"><option value="">تلقائي</option><option value="light">فاتح</option><option value="dark">داكن</option></select></div>
-    <div class="h2" style="margin-top:22px;color:var(--bad-tx)">حذف كل البيانات</div>
-    <button class="btn danger" id="wipe">حذف جميع الموظفين والصور من هذا الجهاز</button>
+    <div style="margin-top:22px"><button class="btn danger" id="logout">تسجيل الخروج</button></div>
   </div>
 </dialog>
 

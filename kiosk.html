@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>باركود الحضور</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/logo.webp" type="image/webp">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:#000;color:#fff;font-family:Cairo,Tahoma,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;padding:2vh 16px;text-align:center;overflow:hidden}
+.logo{background:#fff;border-radius:18px;width:min(14vh,110px);height:min(14vh,110px);overflow:hidden;display:grid;place-items:center}
+.logo img{width:100%;height:100%;object-fit:cover;transform:scale(1.35)}
+h1{margin:0;font-size:clamp(22px,4.5vh,44px);font-weight:800}
+.site{color:#f5ad1b;font-size:clamp(18px,3.2vh,32px);font-weight:700;margin-top:-1vh}
+.qr{background:#fff;border-radius:22px;padding:2vh;width:min(58vh,86vw);aspect-ratio:1;display:grid;place-items:center;border:6px solid #f5ad1b}
+.qr svg{width:100%;height:100%}
+.bar{width:min(58vh,86vw);height:10px;background:#222;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:#f5ad1b;width:100%;transition:width 1s linear}
+.clock{font-size:clamp(28px,6vh,60px);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:2px}
+.hint{color:#aaa;font-size:clamp(14px,2.2vh,20px)}
+.err{background:#7f1d1d;padding:14px 20px;border-radius:12px;font-size:20px;max-width:640px}
+.fs{position:fixed;top:12px;inset-inline-start:12px;background:#222;color:#fff;border:0;border-radius:10px;padding:8px 12px;font:inherit;cursor:pointer;opacity:.6}
+</style>
+</head>
+<body>
+<button class="fs" id="fs" title="ملء الشاشة">⛶ ملء الشاشة</button>
+<div class="logo"><img src="assets/logo.webp" alt="سيتي مكس"></div>
+<h1>سجّل حضورك وانصرافك</h1>
+<div class="site" id="site">…</div>
+<div class="qr" id="qr"></div>
+<div class="bar"><i id="bar"></i></div>
+<div class="clock" id="clock"></div>
+<div class="hint">امسح الباركود بكاميرا جوالك المفعّل · يتغير كل 30 ثانية</div>
+<div class="err" id="err" hidden></div>
+<script>
+(function(){
+  const P=new URLSearchParams(location.search), site=P.get('site'), k=P.get('k');
+  const $=id=>document.getElementById(id);
+  let offset=0, timer=null, wake=null;
+  function err(m){ $('err').textContent=m; $('err').hidden=!m; }
+  function draw(tok){
+    const url=new URL('att.html',location.href); url.search='?s='+encodeURIComponent(site)+'&t='+tok;
+    const q=qrcode(0,'M'); q.addData(url.href); q.make();
+    $('qr').innerHTML=q.createSvgTag({cellSize:8,margin:0,scalable:true});
+  }
+  async function tick(){
+    clearTimeout(timer);
+    try{
+      const r=await fetch('api.php?a=kiosk_token',{method:'POST',headers:{'Content-Type':'application/json','X-Req':'1'},body:JSON.stringify({site:site,k:k})});
+      const j=await r.json(); if(!r.ok||j.error) throw new Error(j.error||'خطأ');
+      err(''); $('site').textContent=j.site; draw(j.token);
+      offset=new Date(j.now.replace(' ','T'))-Date.now();
+      const left=j.left; const bar=$('bar'); bar.style.transition='none'; bar.style.width=(left/30*100)+'%';
+      requestAnimationFrame(()=>{ bar.style.transition='width '+left+'s linear'; bar.style.width='0%'; });
+      timer=setTimeout(tick,left*1000+400);
+    }catch(e){ err('تعذّر تحديث الباركود: '+e.message+' — إعادة المحاولة…'); $('qr').innerHTML=''; timer=setTimeout(tick,5000); }
+  }
+  setInterval(()=>{ const d=new Date(Date.now()+offset); $('clock').textContent=d.toLocaleTimeString('ar-SA-u-nu-latn',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); },500);
+  $('fs').onclick=()=>{ (document.documentElement.requestFullscreen||function(){}).call(document.documentElement); };
+  async function keepAwake(){ try{ if('wakeLock' in navigator) wake=await navigator.wakeLock.request('screen'); }catch(e){} }
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ keepAwake(); tick(); } });
+  if(!site||!k){ err('رابط الشاشة غير مكتمل. انسخه من لوحة الإدارة ← المواقع.'); return; }
+  keepAwake(); tick();
+})();
+</script>
+</body>
+</html>

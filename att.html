@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#000000">
+<title>الحضور والانصراف</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/logo.webp" type="image/webp">
+<link rel="apple-touch-icon" href="assets/logo.webp">
+<style>
+:root{--y:#f5ad1b;--bg:#f6f5f2;--card:#fff;--tx:#000;--mu:#5f5c55;--ln:#e7e4dc}
+@media (prefers-color-scheme:dark){:root{--bg:#0b0b0b;--card:#161616;--tx:#f2f2f2;--mu:#a3a3a3;--ln:#2e2e2e}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font-family:Cairo,Tahoma,sans-serif;min-height:100vh;font-size:16px}
+header{background:#000;color:#fff;border-bottom:4px solid var(--y);padding:14px 16px;display:flex;align-items:center;gap:12px}
+header .lg{width:52px;height:52px;border-radius:12px;background:#fff;overflow:hidden;flex:none}
+header .lg img{width:100%;height:100%;object-fit:cover;transform:scale(1.35)}
+header b{display:block;font-size:18px;font-weight:800}
+header span{color:var(--y);font-size:13px;font-weight:700}
+main{padding:16px;max-width:480px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:18px;padding:20px;margin-bottom:14px}
+h2{margin:0 0 4px;font-size:20px;font-weight:800}
+.mu{color:var(--mu)}
+label{display:block;font-weight:700;font-size:14px;margin:14px 0 6px;color:var(--mu)}
+input{width:100%;padding:13px 14px;border:1px solid var(--ln);border-radius:12px;font:inherit;font-size:18px;background:var(--card);color:var(--tx);text-align:center;letter-spacing:1px}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:0;border-radius:16px;padding:18px;font:inherit;font-size:19px;font-weight:800;cursor:pointer;margin-top:12px;background:var(--y);color:#000}
+.btn.dark{background:#000;color:#fff;border:2px solid var(--y)}
+.btn.ghost{background:transparent;color:var(--tx);border:1px solid var(--ln);font-size:15px;padding:12px}
+.btn:disabled{opacity:.5}
+.status{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:var(--bg);margin-top:12px;font-weight:700}
+.dot{width:14px;height:14px;border-radius:50%;background:#aaa;flex:none}
+.dot.in{background:#1f9d57;box-shadow:0 0 0 5px rgba(31,157,87,.18)}
+.times{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.times div{background:var(--bg);border-radius:12px;padding:10px;text-align:center}
+.times small{display:block;color:var(--mu);font-weight:600}
+.times b{font-size:22px;font-variant-numeric:tabular-nums}
+.res{text-align:center;padding:28px 20px}
+.res .ic{font-size:64px;line-height:1}
+.res.ok{border:3px solid #1f9d57}.res.no{border:3px solid #c9362b}
+.res h2{font-size:24px;margin-top:10px}
+.big{font-size:44px;font-weight:800;font-variant-numeric:tabular-nums}
+.scan{position:fixed;inset:0;background:#000;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px}
+.scan video{width:min(92vw,460px);aspect-ratio:1;object-fit:cover;border-radius:20px;border:4px solid var(--y)}
+.scan p{color:#fff;margin:0;font-weight:700}
+.err{color:#c9362b;font-weight:700;min-height:1.4em;margin-top:10px}
+.clock{font-size:15px;color:var(--mu);font-weight:700}
+</style>
+</head>
+<body>
+<header><div class="lg"><img src="assets/logo.webp" alt="سيتي مكس"></div><div><b>الحضور والانصراف</b><span>سيتي مكس</span></div></header>
+<main id="app"><div class="card mu">جارٍ التحميل…</div></main>
+<div class="scan" id="scan" hidden>
+  <video id="vid" playsinline muted></video>
+  <p>وجّه الكاميرا إلى الباركود على الشاشة</p>
+  <button class="btn ghost" id="scanClose" style="color:#fff;max-width:300px">إلغاء</button>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" defer></script>
+<script>
+(function(){
+'use strict';
+const app=document.getElementById('app');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store={get(){try{return localStorage.getItem('attKey')}catch(e){return null}},set(v){try{v?localStorage.setItem('attKey',v):localStorage.removeItem('attKey')}catch(e){}}};
+const hm=t=>t?t.slice(11,16):'—';
+async function api(a,body){
+  let r; try{ r=await fetch('api.php?a='+a,{method:'POST',headers:{'Content-Type':'application/json','X-Req':'1'},body:JSON.stringify(body)}); }catch(e){ throw Object.assign(new Error('لا يوجد اتصال بالإنترنت'),{code:0}); }
+  let j={}; try{ j=await r.json(); }catch(e){}
+  if(!r.ok||j.error) throw Object.assign(new Error(j.error||('خطأ '+r.status)),{code:r.status});
+  return j;
+}
+const P=new URLSearchParams(location.search); let qrSite=P.get('s'), qrTok=P.get('t');
+if(qrTok) history.replaceState(null,'',location.pathname); // لا يُعاد الإرسال عند التحديث
+
+/* ---------- تفعيل ---------- */
+function activation(msg){
+  app.innerHTML='<div class="card"><h2>تفعيل جوالك</h2><p class="mu">أدخل رقم هويتك ورمز التفعيل الذي وصلك من الإدارة. يتم هذا مرة واحدة فقط.</p>'+
+    '<form id="af"><label>رقم الهوية</label><input id="nid" inputmode="numeric" autocomplete="off" required>'+
+    '<label>رمز التفعيل</label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>'+
+    '<button class="btn">تفعيل</button><div class="err" id="ae">'+esc(msg||'')+'</div></form></div>';
+  document.getElementById('af').onsubmit=async ev=>{ ev.preventDefault(); const b=ev.target.querySelector('button'); b.disabled=true;
+    try{ const r=await api('emp_activate',{nid:document.getElementById('nid').value.trim(),code:document.getElementById('code').value.trim()});
+      store.set(r.key); if(!store.get()) throw new Error('المتصفح يمنع حفظ البيانات (التصفح الخاص؟). افتح الرابط في متصفح عادي.'); home(); }
+    catch(e){ document.getElementById('ae').textContent=e.message; b.disabled=false; } };
+}
+
+/* ---------- الرئيسية ---------- */
+let st=null;
+async function home(){
+  const key=store.get(); if(!key) return activation(qrTok?'فعّل جوالك أولًا ثم امسح الباركود مرة أخرى.':'');
+  try{ st=await api('emp_status',{key}); }
+  catch(e){ if(e.code===403){ store.set(null); return activation(e.message); } app.innerHTML='<div class="card"><div class="err">'+esc(e.message)+'</div><button class="btn" onclick="location.reload()">إعادة المحاولة</button></div>'; return; }
+  if(qrTok){ const t=qrTok; qrTok=null; return punch({site:qrSite,token:t}); }
+  const inside=!!st.open, recs=st.today||[];
+  const first=recs[0], last=recs[recs.length-1];
+  app.innerHTML='<div class="card"><div class="clock" id="clk"></div><h2>مرحبًا، '+esc(st.name.split(' ')[0])+'</h2>'+
+    (st.shift?'<div class="mu">ورديتك: '+esc(st.shift.name)+' ('+st.shift.start_time+' – '+st.shift.end_time+')</div>':'')+
+    '<div class="status"><span class="dot '+(inside?'in':'')+'"></span>'+(inside?'أنت داخل العمل منذ '+hm(st.open):'لم تسجّل حضورًا الآن')+'</div>'+
+    '<div class="times"><div><small>أول حضور اليوم</small><b>'+hm(first&&first.in_time)+'</b></div><div><small>آخر انصراف</small><b>'+hm(last&&last.out_time)+'</b></div></div></div>'+
+    '<div class="card"><div class="mu" style="font-weight:700;text-align:center">'+(inside?'تسجيل الانصراف':'تسجيل الحضور')+'</div>'+
+    (st.qr?'<button class="btn" id="bScan">📷 مسح الباركود</button>':'')+
+    (st.gps?'<button class="btn dark" id="bGps">📍 تسجيل بموقعي</button>':'')+
+    (!st.qr&&!st.gps?'<p class="err">لا توجد طريقة تسجيل مفعّلة لك. تواصل مع الإدارة.</p>':'')+
+    '<div class="err" id="he"></div></div>';
+  const tick=()=>{ const c=document.getElementById('clk'); if(c) c.textContent=new Date().toLocaleString('ar-SA-u-nu-latn',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}); };
+  tick(); clearInterval(home._t); home._t=setInterval(tick,15000);
+  const bs=document.getElementById('bScan'), bg=document.getElementById('bGps');
+  if(bs) bs.onclick=startScan;
+  if(bg) bg.onclick=async()=>{ bg.disabled=true; bg.textContent='جارٍ تحديد موقعك…';
+    try{ const p=await locate(15000,true); await punch({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy}); }
+    catch(e){ document.getElementById('he').textContent=e.message; bg.disabled=false; bg.textContent='📍 تسجيل بموقعي'; } };
+}
+function locate(timeout,strict){ return new Promise((res,rej)=>{
+  if(!navigator.geolocation) return rej(new Error('الجوال لا يدعم تحديد الموقع'));
+  navigator.geolocation.getCurrentPosition(res,e=>rej(new Error(e.code===1?'يجب السماح للمتصفح بالوصول إلى موقعك من الإعدادات':'تعذّر تحديد موقعك. تأكد من تشغيل GPS وأعد المحاولة.')),{enableHighAccuracy:true,timeout,maximumAge:0}); }); }
+
+/* ---------- تسجيل ---------- */
+async function punch(body){
+  app.innerHTML='<div class="card res"><div class="ic">⏳</div><h2>جارٍ التسجيل…</h2></div>';
+  body.key=store.get();
+  if(body.token&&!body.lat){ try{ const p=await locate(4000); body.lat=p.coords.latitude; body.lng=p.coords.longitude; body.acc=p.coords.accuracy; }catch(e){} } // اختياري للتوثيق
+  try{
+    const r=await api('emp_punch',body);
+    if(navigator.vibrate) navigator.vibrate(120);
+    app.innerHTML='<div class="card res ok"><div class="ic">✅</div><h2>'+(r.type==='in'?'تم تسجيل الحضور':'تم تسجيل الانصراف')+'</h2><div class="big">'+hm(r.time)+'</div><div class="mu">'+esc(r.site)+'</div><button class="btn ghost" id="back">رجوع</button></div>';
+  }catch(e){
+    if(e.code===403&&/مربوط/.test(e.message)){ store.set(null); return activation(e.message); }
+    app.innerHTML='<div class="card res no"><div class="ic">⛔</div><h2>لم يتم التسجيل</h2><p>'+esc(e.message)+'</p><button class="btn" id="back">رجوع</button></div>';
+  }
+  document.getElementById('back').onclick=home;
+}
+
+/* ---------- ماسح الباركود داخل الصفحة ---------- */
+let stream=null, raf=0;
+async function startScan(){
+  const he=document.getElementById('he');
+  if(typeof jsQR==='undefined'){ he.textContent='تعذّر تحميل الماسح. يمكنك مسح الباركود بكاميرا الجوال العادية.'; return; }
+  try{ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false}); }
+  catch(e){ he.textContent='تعذّر فتح الكاميرا. اسمح بالوصول للكاميرا أو امسح الباركود بكاميرا الجوال العادية.'; return; }
+  const v=document.getElementById('vid'); v.srcObject=stream; await v.play(); document.getElementById('scan').hidden=false;
+  const c=document.createElement('canvas'), x=c.getContext('2d',{willReadFrequently:true});
+  const loop=()=>{ if(v.readyState===v.HAVE_ENOUGH_DATA){ const w=Math.min(640,v.videoWidth), h=Math.round(w*v.videoHeight/v.videoWidth); c.width=w; c.height=h; x.drawImage(v,0,0,w,h);
+      const code=jsQR(x.getImageData(0,0,w,h).data,w,h,{inversionAttempts:'dontInvert'});
+      if(code&&code.data){ try{ const u=new URL(code.data); const s=u.searchParams.get('s'), t=u.searchParams.get('t'); if(s&&t){ stopScan(); return punch({site:s,token:t}); } }catch(e){} } }
+    raf=requestAnimationFrame(loop); };
+  loop();
+}
+function stopScan(){ cancelAnimationFrame(raf); if(stream) stream.getTracks().forEach(t=>t.stop()); stream=null; document.getElementById('scan').hidden=true; }
+document.getElementById('scanClose').onclick=stopScan;
+
+home();
+})();
+</script>
+</body>
+</html>
