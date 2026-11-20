@@ -668,7 +668,7 @@ $('#docsFile').onchange=async ev=>{ const list=[...ev.target.files]; ev.target.v
    الاستيراد من Excel (الموظفون، الحضور، المواقع، الورديات)
    ===================================================================== */
 const norm=s=>String(s??'').trim().replace(/[إأآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ');
-const arDigits=s=>String(s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+const arDigits=s=>String(s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/٫/g,'.');
 const yes=v=>/^(نعم|yes|y|1|true|✓|✔|مفعل|مسموح)$/i.test(norm(v));
 function readTable(wb,must){
   for(const sn of wb.SheetNames){ const A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null});
@@ -701,7 +701,7 @@ const IMP={
         ['تعليمات',[['طريقة التعبئة'],['اكتب وقت الحضور والانصراف لكل موظف بصيغة 08:00 أو 8:00 ص / 4:30 م.'],['احذف صفوف من لم يحضر، أو اتركها بدون وقت حضور.'],['لإضافة يوم آخر انسخ الصفوف وغيّر التاريخ.'],['المطابقة برقم الهوية، وعمود الاسم للمراجعة فقط.']],[80]]],'قالب الحضور '+todayISO()); },
     run:async wb=>{ const T=readTable(wb,['رقم الهوية','الحضور']); if(!T) throw new Error('لم يتم العثور على أعمدة «رقم الهوية» و«وقت الحضور» في الملف.');
       const ci=T.col('رقم الهوية','الهوية'), cd=T.col('التاريخ','اليوم'), cin=T.col('وقت الحضور','الحضور','دخول'), cout=T.col('وقت الانصراف','الانصراف','خروج'), cn=T.col('ملاحظ');
-      const list=T.rows.map(r=>({nid:arDigits(txt(r[ci])),date:cellToISO(r[cd]),in:cellTime(r[cin]),out:cout>=0?cellTime(r[cout]):'',note:cn>=0?txt(r[cn]):''})).map(x=>x.in===''&&x.out===''?{nid:'',date:'',in:''}:x);
+      const list=T.rows.map(r=>({nid:arDigits(txt(r[ci])),date:cellToISO(typeof r[cd]==='string'?arDigits(r[cd]):r[cd]),in:cellTime(r[cin]),out:cout>=0?cellTime(r[cout]):'',note:cn>=0?txt(r[cn]):''})).map(x=>x.in===''&&x.out===''?{nid:'',date:'',in:''}:x);
       const n=list.filter(x=>x.in).length; if(!n) throw new Error('لا توجد أوقات حضور في الملف. اكتب وقت الحضور لكل موظف حضر.');
       if(!confirm('سيتم استيراد '+n+' سجل حضور. متابعة؟')) return null;
       const r=await api('att_import',{list}); if(canAny('att_view','att_edit')){ await loadWeek(); renderDash(); if($('#v-att').classList.contains('on')) await loadAtt(); }
@@ -736,7 +736,7 @@ $('#impFile').onchange=async ev=>{ const f=ev.target.files[0]; ev.target.value='
   const box=$('#impRes'); box.innerHTML='<p class="muted">جارٍ قراءة «'+esc(f.name)+'»…</p>';
   try{ const res=await IMP[impKey].run(XLSX.read(await f.arrayBuffer(),{type:'array'})); if(!res){ box.innerHTML=''; return; }
     const E=res.errors||[];
-    box.innerHTML='<div class="imp-ok">'+ic('check')+esc(res.ok)+'</div>'+(E.length?'<div class="imp-err"><b>'+E.length+' صف لم يُستورد:</b><ul>'+E.slice(0,50).map(e=>'<li>صف '+e.row+': '+esc(e.msg)+'</li>').join('')+'</ul></div>':'');
+    box.innerHTML='<div class="imp-ok">'+ic('check')+esc(res.ok)+'</div>'+(E.length?'<div class="imp-err"><b>صفوف تحتاج مراجعة ('+E.length+'):</b><ul>'+E.slice(0,50).map(e=>'<li>صف '+e.row+': '+esc(e.msg)+'</li>').join('')+'</ul></div>':'');
     toast(res.ok); }
   catch(e){ box.innerHTML='<div class="imp-err">'+esc(e.message)+'</div>'; } };
 document.addEventListener('click',ev=>{ const b=ev.target.closest('[data-imp]'); if(b) openImport(b.dataset.imp); });
@@ -755,7 +755,7 @@ const EXPORTS={
   former:()=>{ const R=formerRows(); return {title:'الموظفون السابقون',sub:R.length+' موظف',cols:['اسم الموظف','رقم الهوية','المهنة','الجوال','تاريخ الالتحاق','تاريخ المغادرة','السبب'],
     rows:R.map(e=>[e.name,e.nid,e.job,e.phone,fmt(e.join),fmt(e.leftAt),e.leftReason||''])}; },
   alerts:()=>{ const R=alertsFiltered(); return {title:'التنبيهات',sub:'التواريخ المنتهية والقريبة من الانتهاء · '+R.length,cols:['الموظف','المهنة','النوع','تاريخ الانتهاء','الأيام المتبقية','الحالة'],
-    rows:R.map(a=>[a.name,a.job||'',a.type,fmt(a.date),a.days,{v:a.s==='dead'?'منتهية':'قريب الانتهاء',t:a.s}])}; },
+    rows:R.map(a=>[a.name,a.job||'',a.type,fmt(a.date),a.days<0?'منذ '+(-a.days)+' يوم':a.days+' يوم',{v:a.s==='dead'?'منتهية':'قريب الانتهاء',t:a.s}])}; },
   att:()=>{ const R=attFiltered(); return {title:'سجل الحضور والانصراف',sub:fmt($('#attFrom').value)+' إلى '+fmt($('#attTo').value)+' · '+R.length+' سجل',
     cols:['الموظف','رقم الهوية','التاريخ','الحضور','طريقة الحضور','موقع الحضور','الانصراف','طريقة الانصراف','موقع الانصراف','المدة','التأخير (دقيقة)','ملاحظة','عُدّل بواسطة'],
     pdf:[0,2,3,4,5,6,7,9,10,11],

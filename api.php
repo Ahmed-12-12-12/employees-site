@@ -1,6 +1,7 @@
 <?php
 /* واجهة برمجية واحدة: api.php?a=ACTION  (POST JSON) */
 define('APP', 1);
+ini_set('display_errors', '0'); // التحذيرات تذهب للسجل ولا تفسد ردود JSON
 require __DIR__ . '/lib.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -60,6 +61,13 @@ function purge($type, $id) {
     elseif ($type === 'site') { if (q('DELETE FROM sites WHERE id=? AND deleted_at IS NOT NULL', [$id])->rowCount()) q('DELETE FROM emp_sites WHERE site_id=?', [$id]); }
     elseif ($type === 'shift') { if (q('DELETE FROM shifts WHERE id=? AND deleted_at IS NOT NULL', [$id])->rowCount()) q('UPDATE employees SET shift_id=NULL WHERE shift_id=?', [$id]); }
     elseif ($type === 'file') q('DELETE FROM files WHERE id=? AND deleted_at IS NOT NULL', [$id]);
+}
+function trashTitle($t, $id) {
+    if ($t === 'emp') return 'موظف: ' . val('SELECT name FROM employees WHERE id=?', [$id]);
+    if ($t === 'att') { $r = row('SELECT a.in_time, e.name FROM attendance a LEFT JOIN employees e ON e.id=a.emp_id WHERE a.id=?', [$id]); return $r ? 'حضور: ' . $r['name'] . ' — ' . $r['in_time'] : 'حضور'; }
+    if ($t === 'site') return 'موقع: ' . val('SELECT name FROM sites WHERE id=?', [$id]);
+    if ($t === 'shift') return 'وردية: ' . val('SELECT name FROM shifts WHERE id=?', [$id]);
+    return 'ملف: ' . val('SELECT name FROM files WHERE id=?', [$id]);
 }
 const TRASH_T = ['emp' => 'employees', 'att' => 'attendance', 'site' => 'sites', 'shift' => 'shifts', 'file' => 'files'];
 
@@ -257,7 +265,7 @@ case 'sites_import':
         $lat = is_numeric($x['lat'] ?? null) ? (float)$x['lat'] : null; $lng = is_numeric($x['lng'] ?? null) ? (float)$x['lng'] : null;
         $gps = !empty($x['gps']) && $lat !== null && $lng !== null ? 1 : 0;
         $v = [$name, $lat, $lng, max(1, (int)($x['radius'] ?? 50) ?: 50), !empty($x['qr']) ? 1 : 0, $gps];
-        if (!empty($x['gps']) && !$gps) $err[] = ['row' => $i + 2, 'msg' => "«$name»: لا توجد إحداثيات، فلم يُفعَّل التسجيل بالموقع"];
+        if (!empty($x['gps']) && !$gps) $err[] = ['row' => $i + 2, 'msg' => "«{$name}»: لا توجد إحداثيات، فلم يُفعَّل التسجيل بالموقع"];
         if ($id = val('SELECT id FROM sites WHERE name=? AND deleted_at IS NULL', [$name])) { q('UPDATE sites SET name=?, lat=?, lng=?, radius=?, allow_qr=?, allow_gps=? WHERE id=?', array_merge($v, [$id])); $upd++; }
         else { q('INSERT INTO sites (name, lat, lng, radius, allow_qr, allow_gps, secret, kiosk_key) VALUES (?,?,?,?,?,?,?,?)', array_merge($v, [rnd(32), rnd(16)])); $add++; }
     }
@@ -288,7 +296,7 @@ case 'shifts_import':
     foreach ($list as $i => $x) {
         $name = trim((string)($x['name'] ?? '')); if ($name === '') continue;
         $st = (string)($x['start'] ?? ''); $en = (string)($x['end'] ?? '');
-        if (!preg_match($re, $st) || !preg_match($re, $en)) { $err[] = ['row' => $i + 2, 'msg' => "«$name»: وقت البداية أو النهاية غير صحيح"]; continue; }
+        if (!preg_match($re, $st) || !preg_match($re, $en)) { $err[] = ['row' => $i + 2, 'msg' => "«{$name}»: وقت البداية أو النهاية غير صحيح"]; continue; }
         $off = implode(',', array_unique(array_filter(array_map('intval', (array)($x['off'] ?? [])), function ($d) { return $d >= 0 && $d <= 6; })));
         $v = [$name, $st, $en, max(0, (int)($x['grace'] ?? 10)), $off];
         if ($id = val('SELECT id FROM shifts WHERE name=? AND deleted_at IS NULL', [$name])) { q('UPDATE shifts SET name=?, start_time=?, end_time=?, grace=?, off_days=? WHERE id=?', array_merge($v, [$id])); $upd++; }
@@ -342,7 +350,7 @@ case 'att_import':
         $add++;
     }
     db()->commit();
-    logx('استيراد حضور', "أضيف $add، مكرر $skip، أخطاء " . count($err));
+    logx('استيراد حضور', "أضيف {$add}، مكرر {$skip}، أخطاء " . count($err));
     out(['ok' => 1, 'added' => $add, 'skipped' => $skip, 'errors' => array_slice($err, 0, 100)]);
 
 case 'report':
@@ -397,16 +405,18 @@ case 'trash_list':
 case 'trash_restore':
     need('trash'); $t = s('type'); $id = (int)p('id');
     if (!array_key_exists($t, TRASH_T)) fail('نوع غير صالح');
+    $title = trashTitle($t, $id);
     $f = $t === 'file' ? row('SELECT nid, kind, data FROM files WHERE id=?', [$id]) : null;
     if ($f && $f['kind'] === 'id') { q('DELETE FROM photos WHERE nid=?', [$f['nid']]); q('INSERT INTO photos (nid, data) VALUES (?,?)', [$f['nid'], $f['data']]); q('DELETE FROM files WHERE id=?', [$id]); }
     else q('UPDATE ' . TRASH_T[$t] . ' SET deleted_at=NULL, deleted_by=NULL WHERE id=?', [$id]);
-    logx('استرجاع من السلة', $t . ' #' . $id);
+    logx('استرجاع من السلة', $title);
     out(['ok' => 1]);
 case 'trash_purge':
     need('admin'); $t = s('type'); $id = (int)p('id');
     if (!array_key_exists($t, TRASH_T)) fail('نوع غير صالح');
+    $title = trashTitle($t, $id);
     db()->beginTransaction(); purge($t, $id); db()->commit();
-    logx('حذف نهائي', $t . ' #' . $id);
+    logx('حذف نهائي', $title);
     out(['ok' => 1]);
 case 'trash_empty':
     need('admin'); $n = 0;

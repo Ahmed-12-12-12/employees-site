@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="assets/logo.webp" type="image/webp">
 <style>/* حماية: مقاس الأيقونات ثابت حتى لو تأخر ملف التصميم */ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}</style>
-<link rel="stylesheet" href="assets/style.css?v=20261121a">
+<link rel="stylesheet" href="assets/style.css?v=20261121c">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
@@ -370,7 +370,18 @@
       <h3><span class="n">5</span>الوثائق والدعم</h3>
       <ul><li>العمر والأيام المتبقية وتاريخ الدعم (الالتحاق + 3 أشهر) تُحسب تلقائيًا.</li>
       <li>الألوان: <span class="pill s-ok">أكثر من 30 يوم</span> <span class="pill s-warn">30 يوم أو أقل</span> <span class="pill s-dead">منتهٍ</span></li>
-      <li>«رفع Excel» يحدّث الموظفين حسب رقم الهوية ويضيف الجدد، ولا يحذف أحدًا.</li></ul>
+      <li>«استيراد» في الموظفين يحدّث حسب رقم الهوية ويضيف الجدد، ولا يحذف أحدًا. «لا يستحق» الدعم لا يظهر له تاريخ دعم ولا تنبيه.</li></ul>
+      <h3><span class="n">6</span>الاستيراد والتنزيل</h3>
+      <ul><li>في الموظفين والحضور والمواقع والورديات زر «استيراد»: حمّل القالب، عبّئه، ثم اختر الملف. تظهر النتيجة والصفوف التي تحتاج مراجعة.</li>
+      <li>قالب الحضور يحتوي أسماء موظفيك وتاريخ اليوم — اكتب الأوقات فقط (08:00 أو 8:00 ص).</li>
+      <li>كل قسم فيه «Excel» و«PDF» لتنزيل ما يظهر أمامك بعد البحث والفلاتر.</li></ul>
+      <h3><span class="n">7</span>الحذف والسلة</h3>
+      <ul><li>«نقل إلى السابقين» من بطاقة الموظف ينقله إلى «الموظفون السابقون» مع سبب المغادرة، ويوقف تسجيله من الجوال. يمكن إعادته في أي وقت (ويحتاج رمز تفعيل جديد).</li>
+      <li>أي حذف آخر (حضور، موقع، وردية، مستند، أو موظف سابق) ينقله إلى «سلة المحذوفات» ويمكن استرجاعه.</li>
+      <li>الحذف النهائي وإفراغ السلة للمدير فقط.</li></ul>
+      <h3><span class="n">8</span>المستخدمون والصلاحيات</h3>
+      <ul><li>المدير يضيف المستخدمين من «المستخدمون والصلاحيات» ويختار لكل واحد صلاحياته، أو قالبًا جاهزًا (موارد بشرية، مشرف حضور، عرض فقط).</li>
+      <li>كل إضافة وتعديل وحذف واستيراد تُسجَّل في «سجل العمليات» باسم من قام بها ووقتها.</li></ul>
     </div>
   </section>
 </main>
@@ -528,7 +539,7 @@
 
 <div class="pdf-host" id="pdfHost" aria-hidden="true"></div>
 <div class="toast" id="toast"></div>
-<script src="assets/app.js?v=20261121a"></script>
+<script src="assets/app.js?v=20261121c"></script>
 <script>
 /* رسالة واضحة إذا فُتح الملف من الجهاز أو كان مجلد assets ناقصًا */
 (function(){
