@@ -82,68 +82,80 @@ async function loadWeek(){ const d=new Date(); d.setDate(d.getDate()-6); const f
   weekAtt=(await api('att_list',{from,to:todayISO()})).rows; todayAtt=weekAtt.filter(r=>r.work_date===todayISO()); }
 function renderAll(){ renderDash(); renderList(); renderAlerts(); }
 const ic=(n,c)=>'<svg class="i'+(c?' '+c:'')+'"><use href="#i-'+n+'"/></svg>';
-const TONE={ok:['var(--ok)','var(--ok-bg)'],warn:['var(--warn)','var(--warn-bg)'],bad:['var(--bad)','var(--bad-bg)'],info:['var(--info)','var(--info-bg)'],brand:['var(--brand-text)','var(--brand-50)'],none:['var(--muted)','var(--none-bg)']};
-function kpi(l,v,sub,tone,icon){ const t=TONE[tone]||TONE.none;
-  return '<div class="kpi"><div class="top"><div class="lbl">'+l+'</div><div class="chip" style="--k:'+t[0]+';--k-bg:'+t[1]+'">'+ic(icon||'activity')+'</div></div><div class="num">'+v+'</div>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>'; }
+const TONE={ok:'var(--ok-dot)',warn:'var(--warn-dot)',bad:'var(--bad-dot)',info:'var(--info-dot)',brand:'var(--amber)',none:'var(--faint)'};
+/* avatar بالأحرف الأولى — لون ثابت لكل اسم */
+const AVC=[['#efe9dc','#6b5a35'],['#e5edf0','#3e5f68'],['#ebe8f1','#594d72'],['#e8efe5','#4a6440'],['#f3e6e1','#7a4a3c'],['#e7e9f0','#465170']];
+function avInit(name){ const w=String(name||'').trim().split(/\s+/).filter(Boolean); const a=(w[0]||'؟')[0], b=w.length>1?w[1][0]:''; return a+(b?'\u200c'+b:''); }
+function avCol(name){ let h=0; for(const ch of String(name||'')) h=(h*31+ch.charCodeAt(0))%997; return AVC[h%AVC.length]; }
+function av(name,cls){ const c=avCol(name); return '<span class="av'+(cls?' '+cls:'')+'" style="--av-bg:'+c[0]+';--av:'+c[1]+'">'+esc(avInit(name))+'</span>'; }
+function kpi(l,v,sub,tone){ return '<div class="kpi"><div class="lbl"><i style="--k:'+(TONE[tone]||TONE.none)+'"></i>'+l+'</div><div class="num">'+v+'</div>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>'; }
 let charts={};
-const C={ok:'#5aa37f',warn:'#e3ab48',bad:'#d4706b',none:'#e4e3df',brand:'#f5ad1b',ink:'#3a3b41',slate:'#8d97a8',blue:'#7f9cc0',sand:'#d9c7a3'};
+const C={ok:'#3f9a70',warn:'#e3a12f',bad:'#d0605a',none:'#e7e5df',brand:'#f5ad1b',ink:'#1c1c1b',slate:'#aeaca5',blue:'#6b8db3',sand:'#e6d6b0'};
 function chart(id,cfg){ if(typeof Chart==='undefined') return; if(charts[id]) charts[id].destroy();
   const base={responsive:true,maintainAspectRatio:false,animation:{duration:500},
-    plugins:{legend:{position:'bottom',labels:{font:{family:'Cairo',size:12,weight:'500'},color:'#77767c',usePointStyle:true,pointStyle:'circle',boxWidth:7,boxHeight:7,padding:16}},
-      tooltip:{backgroundColor:'#1f2024',titleFont:{family:'Cairo',weight:'600'},bodyFont:{family:'Cairo'},padding:10,cornerRadius:8,displayColors:false,rtl:true}}};
+    plugins:{legend:{position:'bottom',rtl:true,textDirection:'rtl',labels:{font:{family:'Cairo',size:12,weight:'500'},color:'#4b4a47',usePointStyle:true,pointStyle:'rectRounded',boxWidth:8,boxHeight:8,padding:14}},
+      tooltip:{backgroundColor:'#151515',titleFont:{family:'Cairo',weight:'600'},bodyFont:{family:'Cairo'},padding:10,cornerRadius:8,displayColors:false,rtl:true}}};
   const o=cfg.options||{}; cfg.options=Object.assign({},base,o,{plugins:Object.assign({},base.plugins,o.plugins||{})});
-  if(cfg.options.scales) Object.values(cfg.options.scales).forEach(s=>{ s.grid=Object.assign({color:'#f0efeb',drawTicks:false},s.grid||{}); s.border={display:false}; s.ticks=Object.assign({color:'#8a898f',padding:8,font:{family:'Cairo',size:11.5}},s.ticks||{}); });
+  if(cfg.options.scales) Object.values(cfg.options.scales).forEach(s=>{ s.grid=Object.assign({color:'#efeee9',drawTicks:false},s.grid||{}); s.border={display:false}; s.ticks=Object.assign({color:'#85837d',padding:8,font:{family:'Cairo',size:11.5}},s.ticks||{}); });
   charts[id]=new Chart(document.getElementById(id),cfg); }
 if(typeof Chart!=='undefined'){ Chart.defaults.font.family='Cairo'; Chart.defaults.color='#77767c'; }
 function isOff(sh,iso){ return String(sh.off_days).split(',').filter(Boolean).map(Number).includes(new Date(iso+'T12:00:00').getDay()); }
-const donut={cutout:'72%',plugins:{legend:{position:'right'}}};
+const donut={cutout:'76%',layout:{padding:4},plugins:{legend:{position:'bottom'}}};
+/* رقم الإجمالي في منتصف الدائرة */
+if(typeof Chart!=='undefined') Chart.register({id:'centerTotal',afterDraw(ch){ if(ch.config.type!=='doughnut') return;
+  const m=ch.getDatasetMeta(0); if(!m.data.length) return; const {x,y}=m.data[0]; const tot=ch.data.datasets[0].data.reduce((a,b)=>a+(+b||0),0);
+  const c=ch.ctx; c.save(); c.textAlign='center'; c.textBaseline='middle'; c.fillStyle='#151515'; c.font='800 24px Cairo'; c.fillText(tot,x,y-6);
+  c.fillStyle='#85837d'; c.font='600 11.5px Cairo'; c.fillText('الإجمالي',x,y+16); c.restore(); }});
 function renderDash(){
   const R=rows(), N=R.length, c=k=>R.filter(k).length, pct=n=>N?Math.round(100*n/N)+'% من الموظفين':'—';
   const idS=k=>c(r=>state(r.idDays)===k), cdS=k=>c(r=>state(r.cardDays)===k), spS=k=>c(r=>state(r.supDays)===k);
-  const dow=new Date().getDay();
-  $('#todayLine').textContent=new Date().toLocaleDateString('ar-SA-u-nu-latn',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' · '+N+' موظف';
-  $('#todayLbl').textContent='· '+DAYS[dow]+' '+fmt(todayISO());
+  const now=new Date(), hr=now.getHours();
+  $('#greet').textContent=hr<12?'صباح الخير':'مساء الخير';
+  $('#todayLbl').textContent='نظرة عامة';
+  $('#todayLine').textContent=now.toLocaleDateString('ar-SA-u-nu-latn-ca-gregory',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' · '+now.toLocaleDateString('ar-SA-u-nu-latn-ca-islamic-umalqura',{year:'numeric',month:'long',day:'numeric'});
   $('#uploadBox').hidden=N>0;
-  /* attendance KPIs */
+  /* attendance today */
   const came=new Set(todayAtt.map(r=>+r.emp_id)), inside=new Set(todayAtt.filter(r=>!r.out_time).map(r=>+r.emp_id));
-  const now=new Date();
   const expected=emps.filter(e=>{ const sh=shiftById(e.shift_id); return sh&&!isOff(sh,todayISO()); });
   const absent=expected.filter(e=>!came.has(e.id)&&now>new Date(todayISO()+'T'+shiftById(e.shift_id).start_time+':00')).length;
   const late=new Set(todayAtt.filter(r=>lateOf(r)>0).map(r=>+r.emp_id)).size;
   const unbound=emps.filter(e=>!e.bound).length;
-  $('#kpisAtt').innerHTML=
-    kpi('داخل العمل الآن',inside.size,'من <b>'+came.size+'</b> حضروا اليوم','ok','in')+
-    kpi('حضروا اليوم',came.size,expected.length?'المتوقع <b>'+expected.length+'</b>':'لم تُحدَّد ورديات','info','check')+
-    kpi('متأخرون',late,'بعد فترة السماح','warn','clock')+
-    kpi('لم يحضروا بعد',absent,'بعد بداية ورديتهم','bad','userx')+
-    kpi('بلا جوال مفعّل',unbound,unbound?'يحتاجون رمز تفعيل':'الجميع مفعّل','brand','phone');
+  const expN=expected.length, cameExp=expected.filter(e=>came.has(e.id)).length, pending=Math.max(0,expN-cameExp-absent);
+  const onTime=Math.max(0,came.size-late), base=Math.max(1,came.size+absent+pending), w=x=>(100*x/base).toFixed(2)+'%';
+  const pctTxt=expN?Math.round(100*cameExp/expN)+'%':'';
+  const hs=(t,v,icn,col,sub,go)=>'<div'+(go?' data-goto="'+go+'"':'')+'><div class="t" style="--c:'+col+'">'+ic(icn)+t+'</div><b>'+v+'</b><small>'+sub+'</small></div>';
+  $('#hero').innerHTML='<div><div class="h-lbl"><span class="live"></span>الحضور اليوم · '+DAYS[now.getDay()]+' '+fmt(todayISO())+'</div>'+
+    '<div class="h-big"><b>'+came.size+'</b><span>'+(expN?'حضروا من '+expN+' متوقع':'حضروا اليوم')+'</span>'+(pctTxt?'<em>'+pctTxt+'</em>':'')+'</div>'+
+    '<div class="h-note">'+(expN?'يُحسب الغياب بعد بداية وردية كل موظف':'حدّد ورديات للموظفين ليظهر الغياب والتأخير بدقة')+'</div>'+
+    '<div class="seg" role="img" aria-label="توزيع الحضور اليوم"><i style="width:'+w(onTime)+';background:#3f9a70"></i><i style="width:'+w(late)+';background:#f5ad1b"></i><i style="width:'+w(absent)+';background:#d0605a"></i><i style="width:'+w(pending)+';background:#4a4a48"></i></div>'+
+    '<div class="seg-legend"><span style="--c:#3f9a70">في الوقت <b>'+onTime+'</b></span><span style="--c:#f5ad1b">متأخر <b>'+late+'</b></span><span style="--c:#d0605a">غائب <b>'+absent+'</b></span><span style="--c:#4a4a48">لم تبدأ ورديته <b>'+pending+'</b></span></div></div>'+
+    '<div class="hero-stats">'+hs('داخل العمل الآن',inside.size,'in','#3f9a70','لم يسجلوا انصرافًا','att')+hs('متأخرون',late,'clock','#f5ad1b','بعد فترة السماح','att')+
+    hs('لم يحضروا بعد',absent,'userx','#d0605a','بعد بداية الوردية','att')+hs('بلا جوال مفعّل',unbound,'phone','#a9a7a1',unbound?'يحتاجون رمز تفعيل':'الجميع مفعّل','list')+'</div>';
   /* document KPIs */
   $('#kpis').innerHTML=
-    kpi('إجمالي الموظفين',N,'سجل نشط','none','users')+
-    kpi('هويات منتهية',idS('dead'),pct(idS('dead')),'bad','id')+
-    kpi('هويات تنتهي خلال 30 يوم',idS('warn'),'تحتاج تجديد','warn','alert')+
-    kpi('بطاقات صراف',cdS('dead')+cdS('warn'),'منتهية <b>'+cdS('dead')+'</b> · قريبة <b>'+cdS('warn')+'</b>','info','card')+
-    kpi('دعم خلال 30 يوم',spS('warn'),'مستحق سابقًا <b>'+spS('dead')+'</b>','brand','wallet');
-  const ln=(k,v)=>'<div class="ln"><span>'+k+'</span><b>'+v+'</b></div>';
-  $('#sideSummary').innerHTML='<span class="t">ملخص سريع</span>'+ln('الموظفون',N)+ln('داخل العمل الآن',inside.size)+ln('هويات منتهية',idS('dead'))+ln('هويات قريبة',idS('warn'))+ln('بطاقات تحتاج إجراء',cdS('dead')+cdS('warn'));
+    kpi('إجمالي الموظفين',N,'سجل نشط','none')+
+    kpi('هويات منتهية',idS('dead'),pct(idS('dead')),'bad')+
+    kpi('هويات تنتهي خلال 30 يوم',idS('warn'),'تحتاج تجديد','warn')+
+    kpi('بطاقات صراف تحتاج إجراء',cdS('dead')+cdS('warn'),'منتهية <b>'+cdS('dead')+'</b> · قريبة <b>'+cdS('warn')+'</b>','info')+
+    kpi('دعم مستحق خلال 30 يوم',spS('warn'),'مستحق سابقًا <b>'+spS('dead')+'</b>','brand');
   /* charts */
   const days=[]; for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); days.push(d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())); }
   const pres=days.map(d=>new Set(weekAtt.filter(r=>r.work_date===d).map(r=>+r.emp_id)).size);
   const lates=days.map(d=>new Set(weekAtt.filter(r=>r.work_date===d&&lateOf(r)>0).map(r=>+r.emp_id)).size);
-  chart('chWeek',{type:'bar',data:{labels:days.map(d=>DAYS[new Date(d+'T12:00:00').getDay()]),datasets:[{label:'حاضرون',data:pres,backgroundColor:C.ink,borderRadius:6,maxBarThickness:22},{label:'متأخرون',data:lates,backgroundColor:C.brand,borderRadius:6,maxBarThickness:22}]},options:{scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{precision:0}}}}});
+  chart('chWeek',{type:'bar',data:{labels:days.map(d=>DAYS[new Date(d+'T12:00:00').getDay()]),datasets:[{label:'حاضرون',data:pres,backgroundColor:C.ink,borderRadius:6,maxBarThickness:26,categoryPercentage:.6},{label:'منهم متأخرون',data:lates,backgroundColor:C.brand,borderRadius:6,maxBarThickness:26,categoryPercentage:.6}]},options:{scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{precision:0}}}}});
   chart('chStatus',{type:'doughnut',data:{labels:['منتهية','خلال 30 يوم','سارية','بدون تاريخ'],datasets:[{data:[idS('dead'),idS('warn'),idS('ok'),idS('none')],backgroundColor:[C.bad,C.warn,C.ok,C.none],borderWidth:0,spacing:2}]},options:donut});
   const jm={}; R.forEach(r=>{ const j=(r.job||'').trim()||'بدون مهنة'; jm[j]=(jm[j]||0)+1; });
-  const top=Object.entries(jm).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  chart('chJobs',{type:'bar',data:{labels:top.map(x=>x[0].length>22?x[0].slice(0,21)+'…':x[0]),datasets:[{data:top.map(x=>x[1]),backgroundColor:C.sand,hoverBackgroundColor:C.brand,borderRadius:5,maxBarThickness:16}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false},ticks:{color:'#3d3d40'}}}}});
+  const top=Object.entries(jm).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  chart('chJobs',{type:'bar',data:{labels:top.map(x=>x[0].length>22?x[0].slice(0,21)+'…':x[0]),datasets:[{data:top.map(x=>x[1]),backgroundColor:C.sand,hoverBackgroundColor:C.brand,borderRadius:4,maxBarThickness:14}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false},ticks:{color:'#3d3d40'}}}}});
   const bins={'18–25':0,'26–35':0,'36–50':0,'51+':0}; R.forEach(r=>{ const a=r.age; if(!a) return; if(a<=25)bins['18–25']++; else if(a<=35)bins['26–35']++; else if(a<=50)bins['36–50']++; else bins['51+']++; });
-  chart('chAge',{type:'doughnut',data:{labels:Object.keys(bins),datasets:[{data:Object.values(bins),backgroundColor:[C.blue,C.brand,C.ink,C.slate],borderWidth:0,spacing:2}]},options:donut});
+  chart('chAge',{type:'doughnut',data:{labels:Object.keys(bins),datasets:[{data:Object.values(bins),backgroundColor:[C.sand,C.brand,C.ink,C.slate],borderWidth:0,spacing:2}]},options:donut});
   chart('chAtm',{type:'doughnut',data:{labels:['منتهية','قريبة','سارية','بدون تاريخ'],datasets:[{data:[cdS('dead'),cdS('warn'),cdS('ok'),cdS('none')],backgroundColor:[C.bad,C.warn,C.ok,C.none],borderWidth:0,spacing:2}]},options:donut});
   /* alerts + last punches */
   const A=alertsList().slice(0,25);
-  $('#alertsBox').innerHTML=A.map(a=>'<div class="alert-item" data-emp="'+a.id+'"><div><div class="d">'+esc(a.name)+'</div><div class="m">'+a.type+' · '+fmt(a.date)+'</div></div><span class="pill s-'+a.s+'">'+(a.days<0?'منتهية':a.days+' يوم')+'</span></div>').join('')||'<div class="empty-mini">لا توجد تنبيهات عاجلة</div>';
+  $('#alertsBox').innerHTML=A.map(a=>'<div class="alert-item" data-emp="'+a.id+'"><div class="who">'+av(a.name)+'<div style="min-width:0"><div class="d">'+esc(a.name)+'</div><div class="m">'+a.type+' · '+fmt(a.date)+'</div></div></div><span class="dot s-'+a.s+'">'+(a.days<0?'منتهية':'باقي '+a.days+' يوم')+'</span></div>').join('')||'<div class="empty-mini">لا توجد تنبيهات عاجلة</div>';
   const P=[]; todayAtt.forEach(r=>{ P.push({t:r.in_time,type:'حضور',r}); if(r.out_time) P.push({t:r.out_time,type:'انصراف',r}); });
   P.sort((a,b)=>b.t.localeCompare(a.t));
-  $('#lastPunches').innerHTML=P.slice(0,30).map(p=>'<div class="alert-item" data-emp="'+p.r.emp_id+'"><div><div class="d">'+esc(p.r.name)+'</div><div class="m">'+p.type+(((p.type==='حضور'?p.r.in_site_name:p.r.out_site_name))?' · '+esc(p.type==='حضور'?p.r.in_site_name:p.r.out_site_name):'')+'</div></div><span class="pill '+(p.type==='حضور'?'s-ok':'neutral')+' plain num">'+hm(p.t)+'</span></div>').join('')||'<div class="empty-mini">لا توجد تسجيلات اليوم بعد</div>';
+  $('#lastPunches').innerHTML=P.slice(0,30).map(p=>'<div class="alert-item" data-emp="'+p.r.emp_id+'"><div class="who">'+av(p.r.name)+'<div style="min-width:0"><div class="d">'+esc(p.r.name)+'</div><div class="m">'+p.type+(((p.type==='حضور'?p.r.in_site_name:p.r.out_site_name))?' · '+esc(p.type==='حضور'?p.r.in_site_name:p.r.out_site_name):'')+'</div></div></div><span class="dot '+(p.type==='حضور'?'s-ok':'none')+'"><span class="tm">'+hm(p.t)+'</span></span></div>').join('')||'<div class="empty-mini">لا توجد تسجيلات اليوم بعد</div>';
   const n=alertsList().length; const ac=$('#alertCount'); ac.hidden=!n; ac.textContent=n;
 }
 ['#alertsBox','#lastPunches'].forEach(s=>$(s).addEventListener('click',ev=>{ const it=ev.target.closest('[data-emp]'); if(it) showDetail(+it.dataset.emp); }));
@@ -163,25 +175,25 @@ function renderList(){
   });
   R.sort((a,b)=>{ const x=a[sortK],y=b[sortK]; if(x==null||x==='') return 1; if(y==null||y==='') return -1; return (typeof x==='number'?x-y:String(x).localeCompare(String(y),'ar'))*sortDir; });
   if(!emps.length){
-    $('#tb').innerHTML=emptyRow(11,'لا يوجد موظفون بعد','أضف موظفًا أو ارفع ملف Excel الحالي (.xlsm).','<button class="btn accent" data-do="import">'+ic('upload')+'رفع ملف Excel</button>');
+    $('#tb').innerHTML=emptyRow(9,'لا يوجد موظفون بعد','أضف موظفًا أو ارفع ملف Excel الحالي (.xlsm).','<button class="btn accent" data-do="import">'+ic('upload')+'رفع ملف Excel</button>');
     $('#listFoot').textContent=''; return;
   }
-  const dcell=(date,d)=>'<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start">'+dot(d)+(date?'<span class="muted num" style="font-size:11.5px;padding-inline-start:4px">'+fmt(date)+'</span>':'')+'</div>';
+  const dcell=(date,d)=>'<div class="dcell">'+dot(d)+(date?'<small>'+fmt(date)+'</small>':'')+'</div>';
   $('#tb').innerHTML=R.map(r=>'<tr class="click" data-emp="'+r.id+'">'+
-    '<td class="num muted">'+r.n+'</td><td class="name">'+esc(r.name)+'</td><td class="num">'+(r.age??'—')+'</td><td class="mono">'+esc(r.nid||'—')+'</td>'+
+    '<td class="num muted">'+r.n+'</td><td class="name"><div class="who">'+av(r.name)+'<div>'+esc(r.name)+'<small class="mono">'+esc(r.nid||'بدون رقم هوية')+(r.age!=null?' · '+r.age+' سنة':'')+'</small></div></div></td>'+
     '<td>'+dcell(r.idExp,r.idDays)+'</td><td>'+(r.job?'<span class="job-tag">'+esc(r.job)+'</span>':'<span class="s-none">—</span>')+'</td>'+
     '<td>'+dcell(r.cardExp,r.cardDays)+'</td><td>'+dcell(r.sup,r.supDays)+'</td>'+
     '<td class="mono">'+esc(r.phone||'—')+'</td><td>'+esc(r.shiftName||'—')+'</td>'+
-    '<td>'+(r.bound?'<span class="pill s-ok">مفعّل</span>':r.code?'<span class="pill s-warn">بانتظار التفعيل</span>':'<span class="s-none">—</span>')+'</td></tr>').join('')
-    || '<tr><td colspan="11"><div class="empty">لا توجد نتائج مطابقة للفلاتر</div></td></tr>';
+    '<td>'+(r.bound?'<span class="dot s-ok">مفعّل</span>':r.code?'<span class="dot s-warn">بانتظار التفعيل</span>':'<span class="s-none">—</span>')+'</td></tr>').join('')
+    || '<tr><td colspan="9"><div class="empty">لا توجد نتائج مطابقة للفلاتر</div></td></tr>';
   $('#listFoot').textContent='عرض '+R.length+' من '+emps.length+' موظف';
 }
 function dot(d){ const s=state(d); if(s==='none') return '<span class="dot none">—</span>';
-  return '<span class="dot s-'+s+'">'+(d<0?'منتهية منذ '+(-d)+' يوم':'متبقي '+d+' يوم')+'</span>'; }
+  return '<span class="dot s-'+s+'">'+(d<0?'منتهية منذ '+(-d)+' يوم':'باقي '+d+' يوم')+'</span>'; }
 function renderAlerts(){
   const t=$('#aType').value, s=$('#aState').value;
   const A=alertsList().filter(a=>(!t||a.type===t)&&(!s||a.s===s));
-  $('#atb').innerHTML=A.map(a=>'<tr class="click" data-emp="'+a.id+'"><td class="name">'+esc(a.name)+'</td><td>'+a.type+'</td><td class="num">'+fmt(a.date)+'</td><td class="num">'+a.days+'</td><td><span class="pill s-'+a.s+'">'+(a.s==='dead'?'منتهية':'قريب الانتهاء')+'</span></td></tr>').join('')
+  $('#atb').innerHTML=A.map(a=>'<tr class="click" data-emp="'+a.id+'"><td class="name"><div class="who">'+av(a.name)+'<div>'+esc(a.name)+'</div></div></td><td>'+a.type+'</td><td class="num">'+fmt(a.date)+'</td><td class="num">'+a.days+'</td><td><span class="pill s-'+a.s+'">'+(a.s==='dead'?'منتهية':'قريب الانتهاء')+'</span></td></tr>').join('')
     || '<tr><td colspan="5"><div class="empty">لا توجد تنبيهات</div></td></tr>';
 }
 $('#atb').addEventListener('click',ev=>{ const tr=ev.target.closest('[data-emp]'); if(tr) showDetail(+tr.dataset.emp); });
@@ -191,14 +203,17 @@ let detailEmp=null;
 function showDetail(id){
   const e=rows().find(x=>x.id===+id); if(!e) return; detailEmp=e;
   $('#dName').textContent=e.name;
+  const c=avCol(e.name), A=$('#dAv'); A.textContent=avInit(e.name); A.style.setProperty('--av-bg',c[0]); A.style.setProperty('--av',c[1]);
+  $('#dSub').textContent=[e.job,e.nid].filter(Boolean).join(' · ')||'—';
+  const tile=(k,date,d)=>'<div class="tile"><span>'+k+'</span><b>'+(date?fmt(date):'—')+'</b>'+dot(d)+'</div>';
+  $('#dTiles').innerHTML=tile('انتهاء الهوية',e.idExp,e.idDays)+tile('انتهاء بطاقة الصراف',e.cardExp,e.cardDays)+tile('تاريخ الدعم',e.sup,e.supDays);
   const row=(k,v)=>'<div><span>'+k+'</span><b>'+(v===''||v==null?'—':v)+'</b></div>';
   const dd=d=>d==null?'':' <span class="pill s-'+state(d)+'">'+(d<0?'منتهية '+(-d)+' يوم':d+' يوم')+'</span>';
   const ta=todayAtt.filter(r=>+r.emp_id===e.id);
-  $('#dBody').innerHTML=row('رقم الهوية',esc(e.nid))+row('المهنة',esc(e.job))+row('العمر',e.age)+row('الميلاد ميلادي',fmt(e.dob))+row('الميلاد هجري',esc(e.dobH))+
-    row('انتهاء الهوية',fmt(e.idExp)+dd(e.idDays))+row('بطاقة الصراف',esc(e.card))+row('انتهاء البطاقة',fmt(e.cardExp)+dd(e.cardDays))+
-    row('تاريخ الالتحاق',fmt(e.join))+row('تاريخ الدعم',fmt(e.sup)+dd(e.supDays))+row('الجوال',esc(e.phone))+row('البريد',esc(e.email))+
+  $('#dBody').innerHTML=row('رقم الهوية','<span class="mono">'+esc(e.nid||'—')+'</span>')+row('المهنة',esc(e.job))+row('العمر',e.age)+row('الميلاد ميلادي',fmt(e.dob))+row('الميلاد هجري',esc(e.dobH))+
+    row('رقم بطاقة الصراف','<span class="mono">'+esc(e.card||'—')+'</span>')+row('تاريخ الالتحاق',fmt(e.join))+row('الجوال','<span class="mono">'+esc(e.phone||'—')+'</span>')+row('البريد',esc(e.email))+
     row('الوردية',esc(e.shiftName))+row('المواقع المسموحة',e.sites.length?e.sites.map(s=>esc((siteById(s)||{}).name||'')).join('، '):'كل المواقع')+
-    row('جوال الحضور',e.bound?'<span class="pill s-ok">مفعّل</span>':e.code?'<span class="pill s-warn">بانتظار التفعيل</span>':'غير مفعّل')+
+    row('جوال الحضور',e.bound?'<span class="dot s-ok">مفعّل</span>':e.code?'<span class="dot s-warn">بانتظار التفعيل</span>':'غير مفعّل')+
     row('حضور اليوم',ta.length?ta.map(r=>hm(r.in_time)+' ← '+(r.out_time?hm(r.out_time):'داخل')).join(' / '):'لم يسجّل');
   $('#dlgDetail').showModal();
 }
@@ -499,8 +514,8 @@ function exportEmps(){ if(!xlsxOk()) return;
 /* ---------- alerts popup / print ---------- */
 function popup(){
   const A=alertsList(); if(!A.length) return;
-  try{ if(sessionStorage.getItem('popShown')) return; sessionStorage.setItem('popShown','1'); }catch(e){}
-  $('#popList').innerHTML=A.slice(0,40).map(a=>'<li><span><b>'+esc(a.name)+'</b> — '+a.type+'</span><span class="pill s-'+a.s+'">'+(a.days<0?'منتهية منذ '+(-a.days)+' يوم':'باقي '+a.days+' يوم')+'</span></li>').join('')+(A.length>40?'<li class="muted">و '+(A.length-40)+' تنبيهات أخرى…</li>':'');
+  try{ if(localStorage.getItem('popDay')===todayISO()) return; localStorage.setItem('popDay',todayISO()); }catch(e){}
+  $('#popList').innerHTML=A.slice(0,40).map(a=>'<li><span><b>'+esc(a.name)+'</b> <span class="muted">· '+a.type+'</span></span><span class="dot s-'+a.s+'">'+(a.days<0?'منتهية منذ '+(-a.days)+' يوم':'باقي '+a.days+' يوم')+'</span></li>').join('')+(A.length>40?'<li class="muted">و '+(A.length-40)+' تنبيهات أخرى…</li>':'');
   $('#dlgAlerts').showModal();
 }
 $('#popGo').onclick=()=>{ $('#dlgAlerts').close(); show('alerts'); };
