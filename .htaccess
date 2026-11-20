@@ -12,6 +12,16 @@ DirectoryIndex index.html
   </IfModule>
 </FilesMatch>
 
+# التخزين المؤقت: الصفحات تُفحص دائمًا، وملفات التصميم تتجدد عبر رقم الإصدار (?v=)
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|php)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+</IfModule>
+
 # تحويل إلى https (مطلوب لعمل الكاميرا والموقع في الجوال)
 <IfModule mod_rewrite.c>
   RewriteEngine On
