@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="assets/logo.webp" type="image/webp">
 <style>/* حماية: مقاس الأيقونات ثابت حتى لو تأخر ملف التصميم */ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}</style>
-<link rel="stylesheet" href="assets/style.css?v=20261120c">
+<link rel="stylesheet" href="assets/style.css?v=20261121a">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
@@ -57,6 +57,14 @@
   <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM21 14v.01M14 21h.01M17 21h4v-4"/></symbol>
   <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
   <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/></symbol>
+  <symbol id="i-pdf" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 17v-4h1.5a1.5 1.5 0 0 1 0 3H8M13 13v4h1a2 2 0 0 0 0-4z"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></symbol>
+  <symbol id="i-restore" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3v5h5"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
 </svg>
 
@@ -91,17 +99,25 @@
   <div class="brand"><div class="logo"><img src="assets/logo.webp" alt="سيتي مكس City Mix"></div><div><h1>سيتي مكس</h1><small>الموارد البشرية والحضور</small></div></div>
   <nav class="nav" aria-label="القائمة الرئيسية">
     <button data-v="dash" class="on"><svg class="i"><use href="#i-grid"/></svg>نظرة عامة</button>
-    <button data-v="list"><svg class="i"><use href="#i-users"/></svg>الموظفون</button>
-    <button data-v="alerts"><svg class="i"><use href="#i-bell"/></svg>التنبيهات <span class="count" id="alertCount" hidden></span></button>
+    <button data-v="list" data-perm="emps_view"><svg class="i"><use href="#i-users"/></svg>الموظفون</button>
+    <button data-v="alerts" data-perm="emps_view"><svg class="i"><use href="#i-bell"/></svg>التنبيهات <span class="count" id="alertCount" hidden></span></button>
   </nav>
-  <div class="nav-label">الحضور والانصراف</div>
+  <div class="nav-label" data-perm="att_view|att_edit|setup">الحضور والانصراف</div>
   <nav class="nav" aria-label="الحضور">
-    <button data-v="att"><svg class="i"><use href="#i-clock"/></svg>سجل الحضور</button>
-    <button data-v="report"><svg class="i"><use href="#i-chart"/></svg>التقرير الشهري</button>
-    <button data-v="sites"><svg class="i"><use href="#i-pin"/></svg>المواقع والباركود</button>
-    <button data-v="shifts"><svg class="i"><use href="#i-cal"/></svg>الورديات</button>
+    <button data-v="att" data-perm="att_view|att_edit"><svg class="i"><use href="#i-clock"/></svg>سجل الحضور</button>
+    <button data-v="report" data-perm="att_view|att_edit"><svg class="i"><use href="#i-chart"/></svg>التقرير الشهري</button>
+    <button data-v="sites" data-perm="setup"><svg class="i"><use href="#i-pin"/></svg>المواقع والباركود</button>
+    <button data-v="shifts" data-perm="setup"><svg class="i"><use href="#i-cal"/></svg>الورديات</button>
+  </nav>
+  <div class="nav-label" data-perm="emps_view|trash|admin">الإدارة</div>
+  <nav class="nav" aria-label="الإدارة">
+    <button data-v="former" data-perm="emps_view"><svg class="i"><use href="#i-archive"/></svg>الموظفون السابقون <span class="count muted-count" id="formerCount" hidden></span></button>
+    <button data-v="trash" data-perm="trash"><svg class="i"><use href="#i-trash"/></svg>سلة المحذوفات</button>
+    <button data-v="users" data-perm="admin"><svg class="i"><use href="#i-shield"/></svg>المستخدمون والصلاحيات</button>
+    <button data-v="logs" data-perm="admin"><svg class="i"><use href="#i-history"/></svg>سجل العمليات</button>
   </nav>
   <div class="side-foot">
+    <div class="me-box" id="meBox"></div>
     <button data-v="guide"><svg class="i"><use href="#i-book"/></svg>دليل الاستخدام</button>
     <button id="btnSettings"><svg class="i"><use href="#i-sliders"/></svg>الإعدادات</button>
     <button id="logout"><svg class="i"><use href="#i-logout"/></svg>تسجيل الخروج</button>
@@ -109,39 +125,37 @@
 </aside>
 
 <main>
-  <input type="file" id="fileImport" accept=".xlsx,.xlsm,.xls" hidden>
 
   <!-- ===== Dashboard ===== -->
   <section class="view on" id="v-dash">
     <div class="topbar">
       <div><span class="eyebrow" id="todayLbl"></span><h2 id="greet">نظرة عامة</h2><p id="todayLine"></p></div>
       <div class="actions">
-        <button class="btn" data-do="import"><svg class="i"><use href="#i-upload"/></svg>رفع Excel</button>
-        <button class="btn" data-do="export"><svg class="i"><use href="#i-download"/></svg>تصدير</button>
-        <button class="btn primary" data-do="add"><svg class="i"><use href="#i-plus"/></svg>إضافة موظف</button>
+        <button class="btn" data-imp="emps" data-perm="emps_edit,import"><svg class="i"><use href="#i-upload"/></svg>استيراد</button>
+        <button class="btn primary" data-do="add" data-perm="emps_edit"><svg class="i"><use href="#i-plus"/></svg>إضافة موظف</button>
       </div>
     </div>
 
-    <div class="upload-box no-print" id="uploadBox">
+    <div class="upload-box no-print" id="uploadBox" data-perm="emps_edit,import">
       <div class="row" style="gap:14px;flex-wrap:nowrap"><div class="ic"><svg class="i lg"><use href="#i-upload"/></svg></div>
       <div><p>ابدأ برفع ملف الموظفين</p><small>نفس تنسيق ملفك الأصلي (اسم المشترك، رقم الهوية، تاريخ انتهاء الهوية، المهنة…) أو حمّل القالب الجاهز. المطابقة برقم الهوية ولا يُحذف أحد.</small></div></div>
-      <div class="row"><button class="btn" data-do="template"><svg class="i"><use href="#i-file"/></svg>تحميل القالب</button><button class="btn accent" data-do="import"><svg class="i"><use href="#i-upload"/></svg>اختيار الملف</button></div>
+      <div class="row"><button class="btn" data-do="template"><svg class="i"><use href="#i-file"/></svg>تحميل القالب</button><button class="btn accent" data-imp="emps"><svg class="i"><use href="#i-upload"/></svg>اختيار الملف</button></div>
     </div>
 
-    <div class="hero" id="hero"></div>
+    <div class="hero" id="hero" data-perm="att_view|att_edit"></div>
 
-    <div class="sec-title">الوثائق والدعم</div>
-    <div class="kpis" id="kpis"></div>
+    <div data-perm="emps_view"><div class="sec-title">الوثائق والدعم</div>
+    <div class="kpis" id="kpis"></div></div>
 
-    <div class="grid2">
+    <div class="grid2" data-perm="att_view|att_edit">
       <div class="card"><div class="card-h"><div><h3>الحضور خلال آخر 7 أيام</h3><div class="hint">عدد الحاضرين، ومنهم المتأخرون</div></div><button class="btn sm ghost" data-goto="report">التقرير الشهري</button></div><div class="chart-box"><canvas id="chWeek"></canvas></div></div>
       <div class="card"><div class="card-h"><div><h3>آخر التسجيلات</h3><div class="hint">اليوم · تتحدث كل دقيقة</div></div><button class="btn sm ghost" data-goto="att">السجل</button></div><div class="list" id="lastPunches" style="max-height:260px;overflow:auto"></div></div>
     </div>
-    <div class="grid2">
+    <div class="grid2" data-perm="emps_view">
       <div class="card"><div class="card-h"><div><h3>تحتاج متابعة</h3><div class="hint">أقرب التواريخ انتهاءً — اضغط لعرض الموظف</div></div><button class="btn sm ghost" data-goto="alerts">عرض الكل</button></div><div class="list" id="alertsBox" style="max-height:260px;overflow:auto"></div></div>
       <div class="card"><div class="card-h"><div><h3>حالة الهويات</h3><div class="hint">حسب تاريخ الانتهاء</div></div></div><div class="chart-box"><canvas id="chStatus"></canvas></div></div>
     </div>
-    <div class="grid3">
+    <div class="grid3" data-perm="emps_view">
       <div class="card"><div class="card-h"><div><h3>المهن</h3><div class="hint">أكثر المهن عددًا</div></div></div><div class="chart-box sm"><canvas id="chJobs"></canvas></div></div>
       <div class="card"><div class="card-h"><div><h3>بطاقات الصراف</h3><div class="hint">حسب تاريخ الانتهاء</div></div></div><div class="chart-box sm"><canvas id="chAtm"></canvas></div></div>
       <div class="card"><div class="card-h"><div><h3>الفئات العمرية</h3><div class="hint">توزيع الأعمار</div></div></div><div class="chart-box sm"><canvas id="chAge"></canvas></div></div>
@@ -153,10 +167,9 @@
     <div class="topbar">
       <div><h2>سجل الموظفين</h2><p>اضغط على أي صف لعرض بطاقة الموظف</p></div>
       <div class="actions">
-        <button class="btn" data-do="template"><svg class="i"><use href="#i-file"/></svg>القالب</button>
-        <button class="btn" data-do="export"><svg class="i"><use href="#i-download"/></svg>تصدير</button>
-        <button class="btn" data-do="import"><svg class="i"><use href="#i-upload"/></svg>رفع Excel</button>
-        <button class="btn primary" data-do="add"><svg class="i"><use href="#i-plus"/></svg>إضافة موظف</button>
+        <div class="btn-group" data-perm="export"><button class="btn" data-exp="list" data-fmt="xlsx"><svg class="i"><use href="#i-table"/></svg>Excel</button><button class="btn" data-exp="list" data-fmt="pdf"><svg class="i"><use href="#i-pdf"/></svg>PDF</button></div>
+        <button class="btn" data-imp="emps" data-perm="emps_edit,import"><svg class="i"><use href="#i-upload"/></svg>استيراد</button>
+        <button class="btn primary" data-do="add" data-perm="emps_edit"><svg class="i"><use href="#i-plus"/></svg>إضافة موظف</button>
       </div>
     </div>
     <div class="card flush">
@@ -166,6 +179,7 @@
         <select class="in" id="fStatus"><option value="">حالة الهوية</option><option value="dead">منتهية</option><option value="warn">قريبة الانتهاء</option><option value="ok">سارية</option><option value="none">بدون تاريخ</option></select>
         <select class="in" id="fAtm"><option value="">حالة البطاقة</option><option value="dead">منتهية</option><option value="warn">قريبة الانتهاء</option></select>
         <select class="in" id="fDev"><option value="">جوال الحضور</option><option value="1">مفعّل</option><option value="0">غير مفعّل</option></select>
+        <select class="in" id="fElig"><option value="">الاستحقاق</option><option value="1">يستحق</option><option value="0">لا يستحق</option></select>
         <button class="btn" id="btnShowAll">مسح الفلاتر</button>
       </div>
       <div class="table-wrap"><table>
@@ -184,7 +198,7 @@
   <section class="view" id="v-att">
     <div class="topbar">
       <div><h2>الحضور والانصراف</h2><p>تسجيلات الباركود والموقع والتعديلات اليدوية</p></div>
-      <div class="actions"><button class="btn" id="attExport"><svg class="i"><use href="#i-download"/></svg>تصدير</button><button class="btn primary" id="attAdd"><svg class="i"><use href="#i-plus"/></svg>تسجيل يدوي</button></div>
+      <div class="actions"><div class="btn-group" data-perm="export"><button class="btn" data-exp="att" data-fmt="xlsx"><svg class="i"><use href="#i-table"/></svg>Excel</button><button class="btn" data-exp="att" data-fmt="pdf"><svg class="i"><use href="#i-pdf"/></svg>PDF</button></div><button class="btn" data-imp="att" data-perm="att_edit,import"><svg class="i"><use href="#i-upload"/></svg>استيراد</button><button class="btn primary" id="attAdd" data-perm="att_edit"><svg class="i"><use href="#i-plus"/></svg>تسجيل يدوي</button></div>
     </div>
     <div class="card flush">
       <div class="toolbar">
@@ -206,7 +220,7 @@
   <section class="view" id="v-report">
     <div class="topbar">
       <div><h2>التقرير الشهري</h2><p>الحضور والغياب والتأخير والإضافي لكل موظف</p></div>
-      <div class="actions"><input class="in" type="month" id="repMonth" style="width:auto"><button class="btn" id="repPrint"><svg class="i"><use href="#i-print"/></svg>طباعة</button><button class="btn" id="repExport"><svg class="i"><use href="#i-download"/></svg>تصدير</button></div>
+      <div class="actions"><input class="in" type="month" id="repMonth" style="width:auto"><div class="btn-group" data-perm="export"><button class="btn" data-exp="report" data-fmt="xlsx"><svg class="i"><use href="#i-table"/></svg>Excel</button><button class="btn" data-exp="report" data-fmt="pdf"><svg class="i"><use href="#i-pdf"/></svg>PDF</button></div></div>
     </div>
     <div class="kpis" id="repKpis"></div>
     <div class="card flush">
@@ -223,7 +237,7 @@
   <section class="view" id="v-alerts">
     <div class="topbar">
       <div><h2>التنبيهات</h2><p>التواريخ المنتهية والقريبة من الانتهاء</p></div>
-      <div class="actions"><button class="btn" id="btnPrint"><svg class="i"><use href="#i-print"/></svg>طباعة</button></div>
+      <div class="actions"><div class="btn-group" data-perm="export"><button class="btn" data-exp="alerts" data-fmt="xlsx"><svg class="i"><use href="#i-table"/></svg>Excel</button><button class="btn" data-exp="alerts" data-fmt="pdf"><svg class="i"><use href="#i-pdf"/></svg>PDF</button></div></div>
     </div>
     <div class="card flush">
       <div class="toolbar">
@@ -241,7 +255,7 @@
   <section class="view" id="v-sites">
     <div class="topbar">
       <div><h2>المواقع والباركود</h2><p>كل مصنع أو موقع له باركود متغير وإحداثيات خاصة</p></div>
-      <div class="actions"><button class="btn primary" id="siteAdd"><svg class="i"><use href="#i-plus"/></svg>إضافة موقع</button></div>
+      <div class="actions"><div class="btn-group" data-perm="export"><button class="btn" data-exp="sites" data-fmt="xlsx"><svg class="i"><use href="#i-table"/></svg>Excel</button><button class="btn" data-exp="sites" data-fmt="pdf"><svg class="i"><use href="#i-pdf"/></svg>PDF</button></div><button class="btn" data-imp="sites" data-perm="setup,import"><svg class="i"><use href="#i-upload"/></svg>استيراد</button><button class="btn primary" id="siteAdd"><svg class="i"><use href="#i-plus"/></svg>إضافة موقع</button></div>
     </div>
     <div class="card flush"><div class="table-wrap"><table>
       <thead><tr><th>الموقع</th><th>الإحداثيات</th><th>النطاق</th><th>طرق التسجيل</th><th>شاشة الباركود</th><th></th></tr></thead>
@@ -253,12 +267,79 @@
   <section class="view" id="v-shifts">
     <div class="topbar">
       <div><h2>الورديات</h2><p>وقت الدوام وأيام الراحة لحساب التأخير والغياب والإضافي</p></div>
-      <div class="actions"><button class="btn primary" id="shiftAdd"><svg class="i"><use href="#i-plus"/></svg>إضافة وردية</button></div>
+      <div class="actions"><div class="btn-group" data-perm="export"><button class="btn" data-exp="shifts" data-fmt="xlsx"><svg class="i"><use href="#i-table"/></svg>Excel</button><button class="btn" data-exp="shifts" data-fmt="pdf"><svg class="i"><use href="#i-pdf"/></svg>PDF</button></div><button class="btn" data-imp="shifts" data-perm="setup,import"><svg class="i"><use href="#i-upload"/></svg>استيراد</button><button class="btn primary" id="shiftAdd"><svg class="i"><use href="#i-plus"/></svg>إضافة وردية</button></div>
     </div>
     <div class="card flush"><div class="table-wrap"><table>
       <thead><tr><th>الوردية</th><th>البداية</th><th>النهاية</th><th>السماح</th><th>أيام الراحة</th><th>الموظفون</th><th></th></tr></thead>
       <tbody id="shiftTb"></tbody>
     </table></div></div>
+  </section>
+
+  <!-- ===== Former employees ===== -->
+  <section class="view" id="v-former">
+    <div class="topbar">
+      <div><h2>الموظفون السابقون</h2><p>من انتقلوا من سجل الموظفين. يمكن إعادتهم أو نقلهم إلى سلة المحذوفات</p></div>
+      <div class="actions"><div class="btn-group" data-perm="export"><button class="btn" data-exp="former" data-fmt="xlsx"><svg class="i"><use href="#i-table"/></svg>Excel</button><button class="btn" data-exp="former" data-fmt="pdf"><svg class="i"><use href="#i-pdf"/></svg>PDF</button></div></div>
+    </div>
+    <div class="card flush">
+      <div class="toolbar"><div class="grow"><svg class="i"><use href="#i-search"/></svg><input class="in" id="formerQ" type="search" placeholder="بحث بالاسم أو رقم الهوية…"></div></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>الموظف</th><th>المهنة</th><th>تاريخ الالتحاق</th><th>تاريخ المغادرة</th><th>السبب</th><th></th></tr></thead>
+        <tbody id="formerTb"></tbody>
+      </table></div>
+      <div class="foot" id="formerFoot"></div>
+    </div>
+  </section>
+
+  <!-- ===== Trash ===== -->
+  <section class="view" id="v-trash">
+    <div class="topbar">
+      <div><h2>سلة المحذوفات</h2><p>لا يُحذف شيء نهائيًا إلا من هنا وبواسطة المدير</p></div>
+      <div class="actions"><div class="btn-group" data-perm="export"><button class="btn" data-exp="trash" data-fmt="xlsx"><svg class="i"><use href="#i-table"/></svg>Excel</button><button class="btn" data-exp="trash" data-fmt="pdf"><svg class="i"><use href="#i-pdf"/></svg>PDF</button></div><button class="btn danger" id="trashEmpty" data-perm="admin"><svg class="i"><use href="#i-trash"/></svg>إفراغ السلة</button></div>
+    </div>
+    <div class="card flush">
+      <div class="toolbar">
+        <div class="grow"><svg class="i"><use href="#i-search"/></svg><input class="in" id="trashQ" type="search" placeholder="بحث…"></div>
+        <select class="in" id="trashType"><option value="">كل الأنواع</option><option value="emp">موظفون</option><option value="att">سجلات حضور</option><option value="site">مواقع</option><option value="shift">ورديات</option><option value="file">مستندات وصور</option></select>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>العنصر</th><th>النوع</th><th>التفاصيل</th><th>تاريخ الحذف</th><th>بواسطة</th><th></th></tr></thead>
+        <tbody id="trashTb"></tbody>
+      </table></div>
+      <div class="foot" id="trashFoot"></div>
+    </div>
+  </section>
+
+  <!-- ===== Users ===== -->
+  <section class="view" id="v-users">
+    <div class="topbar">
+      <div><h2>المستخدمون والصلاحيات</h2><p>المدير يملك كل الصلاحيات، ويحدد لكل مستخدم ما يستطيع رؤيته وفعله</p></div>
+      <div class="actions"><div class="btn-group" data-perm="export"><button class="btn" data-exp="users" data-fmt="xlsx"><svg class="i"><use href="#i-table"/></svg>Excel</button><button class="btn" data-exp="users" data-fmt="pdf"><svg class="i"><use href="#i-pdf"/></svg>PDF</button></div><button class="btn primary" id="userAdd"><svg class="i"><use href="#i-plus"/></svg>إضافة مستخدم</button></div>
+    </div>
+    <div class="card flush"><div class="table-wrap"><table>
+      <thead><tr><th>المستخدم</th><th>الدور</th><th>الصلاحيات</th><th>الحالة</th><th>آخر دخول</th><th></th></tr></thead>
+      <tbody id="userTb"></tbody>
+    </table></div></div>
+  </section>
+
+  <!-- ===== Logs ===== -->
+  <section class="view" id="v-logs">
+    <div class="topbar">
+      <div><h2>سجل العمليات</h2><p>كل إضافة وتعديل وحذف واستيراد — من قام بها ومتى</p></div>
+      <div class="actions"><div class="btn-group" data-perm="export"><button class="btn" data-exp="logs" data-fmt="xlsx"><svg class="i"><use href="#i-table"/></svg>Excel</button><button class="btn" data-exp="logs" data-fmt="pdf"><svg class="i"><use href="#i-pdf"/></svg>PDF</button></div></div>
+    </div>
+    <div class="card flush">
+      <div class="toolbar">
+        <label class="field-lbl">من <input class="in" type="date" id="logFrom" style="width:auto"></label>
+        <label class="field-lbl">إلى <input class="in" type="date" id="logTo" style="width:auto"></label>
+        <div class="grow"><svg class="i"><use href="#i-search"/></svg><input class="in" id="logQ" type="search" placeholder="بحث بالمستخدم أو العملية أو التفاصيل…"></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>الوقت</th><th>المستخدم</th><th>العملية</th><th>التفاصيل</th></tr></thead>
+        <tbody id="logTb"></tbody>
+      </table></div>
+      <div class="foot" id="logFoot"></div>
+    </div>
   </section>
 
   <!-- ===== Guide ===== -->
@@ -300,12 +381,12 @@
   <div class="dh"><div class="prof"><span class="av lg" id="dAv"></span><div><h3 id="dName"></h3><small id="dSub"></small></div></div><button type="button" class="x" data-close aria-label="إغلاق"><svg class="i"><use href="#i-x"/></svg></button></div>
   <div class="db"><div class="tiles" id="dTiles"></div><div class="kv" id="dBody"></div></div>
   <div class="df">
-    <button class="btn primary" id="dEdit"><svg class="i"><use href="#i-edit"/></svg>تعديل</button>
-    <button class="btn" id="dDev"><svg class="i"><use href="#i-phone"/></svg>جوال الحضور</button>
-    <button class="btn" id="dId"><svg class="i"><use href="#i-id"/></svg>صورة الهوية</button>
-    <button class="btn" id="dAtt"><svg class="i"><use href="#i-clock"/></svg>سجل الحضور</button>
+    <button class="btn primary" id="dEdit" data-perm="emps_edit"><svg class="i"><use href="#i-edit"/></svg>تعديل</button>
+    <button class="btn" id="dDocs" data-perm="docs"><svg class="i"><use href="#i-folder"/></svg>المستندات والصور</button>
+    <button class="btn" id="dDev" data-perm="setup"><svg class="i"><use href="#i-phone"/></svg>جوال الحضور</button>
+    <button class="btn" id="dAtt" data-perm="att_view|att_edit"><svg class="i"><use href="#i-clock"/></svg>سجل الحضور</button>
     <span style="flex:1"></span>
-    <button class="btn danger" id="dDel"><svg class="i"><use href="#i-trash"/></svg>حذف</button>
+    <button class="btn danger" id="dDel" data-perm="emps_remove"><svg class="i"><use href="#i-archive"/></svg>نقل إلى السابقين</button>
   </div>
 </dialog>
 
@@ -325,7 +406,7 @@
       <div><label>رقم بطاقة الصراف</label><input class="in" name="card" inputmode="numeric"></div>
       <div><label>تاريخ انتهاء البطاقة</label><input class="in" type="date" name="cardExp"></div>
       <div><label>تاريخ الالتحاق</label><input class="in" type="date" name="join"><div class="hint" id="supHint"></div></div>
-      <div></div>
+      <div><label>استحقاق الدعم</label><select class="in" name="eligible" style="width:100%"><option value="">غير محدد</option><option value="1">يستحق</option><option value="0">لا يستحق</option></select></div>
       <div class="fs">التواصل</div>
       <div><label>رقم الجوال</label><input class="in" name="phone" inputmode="tel"></div>
       <div><label>البريد الإلكتروني</label><input class="in" type="email" name="email"></div>
@@ -343,18 +424,6 @@
   <div class="dh"><h3 id="devTitle">جوال الحضور</h3><button type="button" class="x" data-close aria-label="إغلاق"><svg class="i"><use href="#i-x"/></svg></button></div>
   <div class="db" id="devBody"></div>
   <div class="df"><button class="btn primary" id="devGen"><svg class="i"><use href="#i-refresh"/></svg>إنشاء رمز تفعيل جديد</button><button type="button" class="btn" data-close>إغلاق</button></div>
-</dialog>
-
-<!-- ID photo -->
-<dialog id="dlgId">
-  <div class="dh"><h3 id="idTitle">صورة الهوية</h3><button type="button" class="x" data-close aria-label="إغلاق"><svg class="i"><use href="#i-x"/></svg></button></div>
-  <div class="db" id="idBody"></div>
-  <div class="df">
-    <label class="btn primary"><svg class="i"><use href="#i-upload"/></svg>رفع / استبدال الصورة<input type="file" accept="image/*" id="idFile" hidden></label>
-    <button type="button" class="btn" data-close>إغلاق</button>
-    <span style="flex:1"></span>
-    <button class="btn danger" id="idDel"><svg class="i"><use href="#i-trash"/></svg>حذف الصورة</button>
-  </div>
 </dialog>
 
 <!-- Attendance manual -->
@@ -419,15 +488,47 @@
     <div><label>كلمة المرور الحالية</label><input class="in" id="pwOld" type="password"></div>
     <div><label>كلمة المرور الجديدة (8+)</label><input class="in" id="pwNew" type="password"></div>
     <div class="full"><button class="btn primary" id="pwSave">حفظ كلمة المرور</button></div>
-    <div class="fs">إضافة مدير آخر</div>
-    <div><label>اسم المستخدم</label><input class="in" id="adU" dir="ltr"></div>
-    <div><label>كلمة المرور (8+)</label><input class="in" id="adP" type="password"></div>
-    <div class="full"><button class="btn" id="adSave"><svg class="i"><use href="#i-plus"/></svg>إضافة المدير</button></div>
+    <div class="full hint">لإضافة مستخدمين وتحديد صلاحياتهم: «المستخدمون والصلاحيات» في القائمة (للمدير).</div>
   </div></div>
 </dialog>
 
+<!-- Import -->
+<dialog id="dlgImport" style="width:min(640px,calc(100vw - 32px))">
+  <div class="dh"><h3 id="impTitle">استيراد من Excel</h3><button type="button" class="x" data-close aria-label="إغلاق"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="db" id="impBody"></div>
+  <div class="df"><button class="btn primary" id="impPick"><svg class="i"><use href="#i-upload"/></svg>اختيار ملف Excel</button><button class="btn" id="impTpl"><svg class="i"><use href="#i-download"/></svg>تحميل القالب</button><span style="flex:1"></span><button type="button" class="btn" data-close>إغلاق</button></div>
+  <input type="file" id="impFile" accept=".xlsx,.xlsm,.xls,.csv" hidden>
+</dialog>
+
+<!-- Documents -->
+<dialog id="dlgDocs" style="width:min(820px,calc(100vw - 32px))">
+  <div class="dh"><h3 id="docsTitle">المستندات والصور</h3><button type="button" class="x" data-close aria-label="إغلاق"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="db" id="docsBody"></div>
+  <div class="df"><span class="hint muted" style="font-size:12.5px">الملفات مرتبطة برقم هوية الموظف · صور أو PDF حتى 8 ميجابايت · الحذف ينقلها إلى السلة</span><span style="flex:1"></span><button type="button" class="btn" data-close>إغلاق</button></div>
+  <input type="file" id="docsFile" accept="image/*,application/pdf" multiple hidden>
+</dialog>
+
+<!-- User -->
+<dialog id="dlgUser" style="width:min(680px,calc(100vw - 32px))">
+  <form method="dialog" id="userForm">
+    <div class="dh"><h3 id="userTitle">مستخدم</h3><button type="button" class="x" data-close aria-label="إغلاق"><svg class="i"><use href="#i-x"/></svg></button></div>
+    <div class="db"><div class="form">
+      <div><label>الاسم</label><input class="in" name="full_name" placeholder="مثال: أحمد — الموارد البشرية"></div>
+      <div><label>اسم الدخول *</label><input class="in" name="username" dir="ltr" required autocomplete="off"></div>
+      <div><label id="upLbl">كلمة المرور *</label><input class="in" name="password" type="password" dir="ltr" autocomplete="new-password"></div>
+      <div><label>الدور</label><select class="in" name="role" style="width:100%"><option value="user">مستخدم — حسب الصلاحيات</option><option value="admin">مدير — كل الصلاحيات</option></select></div>
+      <div class="full" id="permBox"><label>الصلاحيات</label>
+        <div class="row" style="gap:6px;margin-bottom:10px"><span class="muted" style="font-size:12.5px">قوالب سريعة:</span><button type="button" class="btn sm" data-preset="hr">موارد بشرية</button><button type="button" class="btn sm" data-preset="att">مشرف حضور</button><button type="button" class="btn sm" data-preset="view">عرض فقط</button><button type="button" class="btn sm ghost" data-preset="none">مسح</button></div>
+        <div class="checks perm-checks" id="permChecks"></div></div>
+      <div class="full"><div class="checks"><label><input type="checkbox" name="active" checked> الحساب مفعّل</label></div></div>
+    </div></div>
+    <div class="df"><button class="btn primary" value="save">حفظ</button><button type="button" class="btn" data-close>إلغاء</button></div>
+  </form>
+</dialog>
+
+<div class="pdf-host" id="pdfHost" aria-hidden="true"></div>
 <div class="toast" id="toast"></div>
-<script src="assets/app.js?v=20261120c"></script>
+<script src="assets/app.js?v=20261121a"></script>
 <script>
 /* رسالة واضحة إذا فُتح الملف من الجهاز أو كان مجلد assets ناقصًا */
 (function(){

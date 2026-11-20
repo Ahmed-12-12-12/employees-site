@@ -50,6 +50,49 @@ function schema() {
     ];
 }
 
+/* ترقية قاعدة البيانات تلقائيًا (بدون إعادة تثبيت). كل خطوة تُنفَّذ مرة واحدة. */
+const DB_VERSION = 2;
+function migrate() {
+    $my = driver() === 'mysql';
+    $pk = $my ? 'INT AUTO_INCREMENT PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
+    $end = $my ? ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci' : '';
+    $big = $my ? 'LONGTEXT' : 'TEXT';
+    db()->exec("CREATE TABLE IF NOT EXISTS meta (k VARCHAR(40) NOT NULL PRIMARY KEY, v TEXT)$end");
+    $v = (int)val("SELECT v FROM meta WHERE k='db'");
+    if ($v >= DB_VERSION) return;
+    $cols = function ($t) use ($my) {
+        if ($my) return array_column(rows("SHOW COLUMNS FROM $t"), 'Field');
+        return array_column(rows("PRAGMA table_info($t)"), 'name');
+    };
+    $add = function ($t, $defs) use ($cols) {
+        $have = $cols($t);
+        foreach ($defs as $c => $def) if (!in_array($c, $have, true)) db()->exec("ALTER TABLE $t ADD COLUMN $c $def");
+    };
+    if ($v < 2) {
+        $add('admins', ['role' => "VARCHAR(10) NOT NULL DEFAULT 'admin'", 'perms' => 'TEXT', 'full_name' => 'VARCHAR(100)', 'active' => 'TINYINT NOT NULL DEFAULT 1', 'last_login' => 'DATETIME NULL']);
+        $add('employees', ['eligible' => 'TINYINT NULL', 'left_at' => 'DATETIME NULL', 'left_reason' => 'VARCHAR(255)', 'deleted_at' => 'DATETIME NULL', 'deleted_by' => 'VARCHAR(60)']);
+        foreach (['attendance', 'sites', 'shifts'] as $t) $add($t, ['deleted_at' => 'DATETIME NULL', 'deleted_by' => 'VARCHAR(60)']);
+        db()->exec("CREATE TABLE IF NOT EXISTS files (id $pk, nid VARCHAR(20) NOT NULL, kind VARCHAR(12) NOT NULL, name VARCHAR(200), mime VARCHAR(60), data $big NOT NULL, created_at DATETIME, created_by VARCHAR(60), deleted_at DATETIME NULL, deleted_by VARCHAR(60))$end");
+        db()->exec("CREATE TABLE IF NOT EXISTS logs (id $pk, at DATETIME NOT NULL, user VARCHAR(60), action VARCHAR(40) NOT NULL, detail TEXT)$end");
+    }
+    if (val("SELECT COUNT(*) FROM meta WHERE k='db'")) q("UPDATE meta SET v=? WHERE k='db'", [DB_VERSION]);
+    else q("INSERT INTO meta (k, v) VALUES ('db', ?)", [DB_VERSION]);
+}
+
+/* الصلاحيات — المدير (admin) يملكها كلها + إدارة المستخدمين + الحذف النهائي + سجل العمليات */
+const PERMS = [
+    'emps_view'   => 'عرض الموظفين والتنبيهات',
+    'emps_edit'   => 'إضافة وتعديل الموظفين',
+    'emps_remove' => 'نقل الموظفين إلى السابقين',
+    'docs'        => 'المستندات والصور',
+    'att_view'    => 'عرض الحضور والتقارير',
+    'att_edit'    => 'تعديل الحضور يدويًا',
+    'setup'       => 'المواقع والورديات وتفعيل الجوالات',
+    'import'      => 'استيراد ملفات Excel',
+    'export'      => 'تنزيل PDF و Excel',
+    'trash'       => 'سلة المحذوفات والاسترجاع',
+];
+
 /* QR token: يتغير كل 30 ثانية */
 const QR_STEP = 30;
 function qr_token($site, $win) { return substr(hash_hmac('sha256', $win . '|' . $site['id'], $site['secret']), 0, 16); }

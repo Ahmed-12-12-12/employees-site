@@ -23,7 +23,8 @@ if (!$done && $_SERVER['REQUEST_METHOD'] === 'POST') {
             if (@file_put_contents(__DIR__ . '/config.php', $conf) === false) throw new Exception('تعذّر إنشاء config.php. أنشئه يدويًا من config.sample.php ثم أعد فتح هذه الصفحة.');
         }
         foreach (schema() as $sql) db()->exec($sql);
-        q('INSERT INTO admins (username, pass_hash, created_at) VALUES (?,?,?)', [$au, password_hash($ap, PASSWORD_DEFAULT), now()]);
+        migrate();
+        q("INSERT INTO admins (username, pass_hash, created_at, role, full_name) VALUES (?,?,?,'admin','المدير')", [$au, password_hash($ap, PASSWORD_DEFAULT), now()]);
         $ok = true; $done = true;
     } catch (Throwable $e) { $msg = $e->getMessage(); }
 }
